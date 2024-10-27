@@ -1,0 +1,110 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# Thumbnails
+._*
+
+# MacOS generated files by Finder
+.Spotlight-V100
+.Trashes
+.VolumeIcon.icns
+.fseventsd
+
+# PyCharm-specific files
+.idea/
+*.iml
+
+# Python bytecode and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Conda environment
+env/
+*.env
+
+# Environment variable files
+.env
+.env.*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Machine learning artifacts (model checkpoints, etc.)
+*.ckpt
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+
+# Binary or packaged artifacts
+*.rar
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Logs and local configuration files
+*.log
+*.out
+*.pid
+
+# Cache files
+.cache/
+*.cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment directories
+venv/
+.venv/
+env/
+.env/
+env.bak/
+venv.bak/
+
+# VS Code directories (if you use it alongside PyCharm)
+.vscode/
+
+# Ignore data files (optional)
+data/
+data/*.csv
+data/*.tsv
+data/*.json
+
+# Ignore large model files
+models/
+*.pb
+*.onnx
+*.weights
+*.params
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.swn
+
+# Ignore Python debugging artifacts
+*.coverage
+.coverage.*
+htmlcov/
+
+# Ignore Jupyter notebook metadata
+.ipynb_checkpoints/
+*.ipynb
+
+# Ignore TensorBoard logs
+logs/
+
+# Manually added directories and files
+datasets/

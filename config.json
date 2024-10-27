@@ -1,0 +1,51 @@
+{
+  "generator": {
+    "train_data_dir": "datasets/training/training_dataset",
+    "train_labels_dir": "datasets/training",
+    "train_label_file": "training.csv",
+    "val_data_dir": "datasets/validation/validation_dataset",
+    "val_labels_dir": "datasets/validation/",
+    "val_label_file": "validation.csv",
+    "dataset_size": 10,
+    "rotation_angle": 20,
+    "delta": 0.2
+  },
+  "encoder": {
+    "train_data_splice": "None",
+    "normalize_data": "True",
+    "normalize_labels": "True"
+  },
+  "model": {
+    "saved_models_dir": "",
+    "load_model": ""
+  },
+  "training": {
+    "val_split": 0.3,
+    "n_epochs": 3000,
+    "early_stopping": {
+      "add_callback": "True",
+      "monitor": "val_loss",
+      "min_delta": 0.0,
+      "patience": 30,
+      "verbose": 1,
+      "restore_best_weights": "True"
+    },
+    "lr_schedule": {
+      "add_callback": "True",
+      "monitor": "val_loss",
+      "factor": 0.2,
+      "patience": 5,
+      "min_lr": 0.001
+    },
+    "log_csv": {
+      "add_callback": "False",
+      "separator:": ",",
+      "append": "True"
+    }
+  },
+  "metrics": {
+    "x_weight": 1.0,
+    "y_weight": 1.0,
+    "angle_weight": 1.0
+  }
+}
