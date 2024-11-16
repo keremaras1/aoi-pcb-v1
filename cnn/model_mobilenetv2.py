@@ -8,8 +8,9 @@ def build_model(input_shape, output_shape):
         weights="imagenet", include_top=False, input_shape=input_shape
     )
     backbone.trainable = False
-
     inputs = layers.Input(input_shape)
+
+    # Add randomized noise to the input data for robustness
     x = layers.GaussianNoise(0.1)(inputs)
     x = keras.applications.mobilenet_v2.preprocess_input(x)
     x = backbone(x)
@@ -21,10 +22,7 @@ def build_model(input_shape, output_shape):
     x = layers.Flatten()(x)
     x = layers.Dense(512, activation='relu')(x)
     x = layers.Dropout(0.1)(x)
-    outputs = layers.Dense(output_shape)(x)
 
-    # x = layers.SeparableConv2D(
-    #    OUTPUT, kernel_size=3, strides=1, activation="relu"
-    # )(x)
+    outputs = layers.Dense(output_shape)(x)
 
     return keras.Model(inputs, outputs, name="keypoint_detector")

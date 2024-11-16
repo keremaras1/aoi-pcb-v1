@@ -101,7 +101,6 @@ htmlcov/
 
 # Ignore Jupyter notebook metadata
 .ipynb_checkpoints/
-*.ipynb
 
 # Ignore TensorBoard logs
 logs/

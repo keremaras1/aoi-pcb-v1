@@ -1,14 +1,15 @@
 import csv
 import numpy as np
 from PIL import Image
-from helper import sort_alphanumeric, normalize_values
+from pathlib import Path
+from data_processing.data_generator_utils import sort_alphanumeric, normalize_values
 
 
 class DataEncoder:
     def __init__(self, config):
-        self.size = config.data.train_data_size
-        self.normalize_data = config.normalize_data
-        self.normalize_labels = config.normalize_labels
+        self.size = config.encoder.train_data_splice
+        self.normalize_data = config.encoder.normalize_data
+        self.normalize_labels = config.encoder.normalize_labels
         self.dataset = []
         self.labels = []
         self.ref_coords = []
@@ -17,17 +18,24 @@ class DataEncoder:
     def __call__(self, images_dir, labels_dir, *args, **kwargs):
         sorted_images = sort_alphanumeric(images_dir)
 
-        self.dataset = self.image_to_numpy(sorted_images)
+        self.dataset = self.image_to_numpy(Path(images_dir), sorted_images)
         self.labels, self.ref_coords, self.ref_center = self.coords_to_numpy(labels_dir, self.dataset.shape[1])
+
+        if self.normalize_data:
+            assert self.dataset.max() <= 1.0 and self.dataset.min() >= 0.0
+
+        if self.normalize_labels:
+            assert self.labels.max() <= 1.0 and self.labels.min() >= 0.0
+            assert self.ref_coords.max() <= 1.0 and self.ref_coords.min() >= 0.0
+            assert self.ref_center.max() <= 1.0 and self.ref_center.min() >= 0.0
 
         return self.dataset, self.labels, self.ref_coords, self.ref_center
 
-    def image_to_numpy(self, sorted_dir):
-
+    def image_to_numpy(self, images_dir, sorted_dir):
         dataset = []
 
         for file in sorted_dir:
-            img = Image.open(file)
+            img = Image.open(images_dir / file)
             imgArray = np.array(img)
             dataset.append(imgArray)
 

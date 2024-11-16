@@ -11,7 +11,7 @@
     "delta": 0.2
   },
   "encoder": {
-    "train_data_splice": "None",
+    "train_data_splice": null,
     "normalize_data": "True",
     "normalize_labels": "True"
   },
@@ -20,8 +20,9 @@
     "load_model": ""
   },
   "training": {
+    "optimizer": "Adam",
     "val_split": 0.3,
-    "n_epochs": 3000,
+    "n_epochs": 1500,
     "early_stopping": {
       "add_callback": "True",
       "monitor": "val_loss",
