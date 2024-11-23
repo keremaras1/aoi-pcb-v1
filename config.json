@@ -1,47 +1,57 @@
 {
   "generator": {
-    "train_data_dir": "datasets/training/training_dataset",
-    "train_labels_dir": "datasets/training",
-    "train_label_file": "training.csv",
-    "val_data_dir": "datasets/validation/validation_dataset",
-    "val_labels_dir": "datasets/validation/",
-    "val_label_file": "validation.csv",
-    "dataset_size": 10,
-    "rotation_angle": 20,
-    "delta": 0.2
+    "gen_train": true,
+    "gen_val": true,
+    "train_data": {
+      "dataset_size": 2000,
+      "rotation_angle": 10,
+      "delta": 0.1,
+      "data_dir": "datasets/training/training_dataset",
+      "labels_dir": "datasets/training",
+      "label_file": "training.csv"
+    },
+    "val_data": {
+      "dataset_size": 2000,
+      "rotation_angle": 10,
+      "delta": 0.1,
+      "data_dir": "datasets/validation/validation_dataset",
+      "labels_dir": "datasets/validation/",
+      "label_file": "validation.csv"
+    },
+    "dataset_size": 2000,
+    "rotation_angle": 10,
+    "delta": 0.1
   },
   "encoder": {
     "train_data_splice": null,
-    "normalize_data": "True",
-    "normalize_labels": "True"
+    "normalize_data": true,
+    "normalize_labels": true
   },
   "model": {
     "saved_models_dir": "",
     "load_model": ""
   },
   "training": {
-    "optimizer": "Adam",
+    "optimizer_lr": 0.01,
     "val_split": 0.3,
-    "n_epochs": 1500,
+    "n_epochs": 3000,
     "early_stopping": {
-      "add_callback": "True",
       "monitor": "val_loss",
-      "min_delta": 0.0,
-      "patience": 30,
+      "min_delta": 0.001,
+      "patience": 20,
       "verbose": 1,
-      "restore_best_weights": "True"
+      "restore_best_weights": true
     },
     "lr_schedule": {
-      "add_callback": "True",
       "monitor": "val_loss",
-      "factor": 0.2,
+      "factor": 0.1,
       "patience": 5,
-      "min_lr": 0.001
+      "min_lr": 0.0001
     },
     "log_csv": {
-      "add_callback": "False",
+      "file_name": "cl_cm_test_logs.csv",
       "separator:": ",",
-      "append": "True"
+      "append": true
     }
   },
   "metrics": {

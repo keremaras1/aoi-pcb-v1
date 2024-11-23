@@ -15,6 +15,16 @@ class Config:
             else:
                 setattr(self, key, value)
 
+    def get_init_kwargs(self, key):
+        if not hasattr(self, key):
+            raise ValueError(f"Key '{key}' not found in the configuration.")
+
+        nested_section = getattr(self, key)
+        if not isinstance(nested_section, Config):
+            raise ValueError(f"Key '{key}' must point to a nested dictionary.")
+
+        return nested_section.__dict__
+
     @classmethod
     def from_dict(cls, data_dict):
         config_instance = cls.__new__(cls)  # Avoid calling __init__
