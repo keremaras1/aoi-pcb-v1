@@ -16,10 +16,16 @@ class Config:
                 setattr(self, key, value)
 
     def get_init_kwargs(self, key):
-        if not hasattr(self, key):
-            raise ValueError(f"Key '{key}' not found in the configuration.")
+        keys = key.split(".")  # Split the key on dots for nested traversal
+        nested_section = self
 
-        nested_section = getattr(self, key)
+        # Traverse the nested Config objects
+        for k in keys:
+            if not hasattr(nested_section, k):
+                raise ValueError(f"Key '{key}' not found in the configuration.")
+            nested_section = getattr(nested_section, k)
+
+        # Ensure the final section is a Config instance
         if not isinstance(nested_section, Config):
             raise ValueError(f"Key '{key}' must point to a nested dictionary.")
 
