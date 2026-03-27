@@ -7,6 +7,7 @@ class CustomMetric:
         self.R_c = tf.cast(tf.transpose(tf.reshape(ref_coords, [-1, 2])), dtype=tf.float64)
         self.weights = tf.transpose(tf.constant([[config.metrics.x_weight, config.metrics.y_weight, config.metrics.angle_weight]], dtype=tf.float64))
 
+    @tf.function
     def custom_metric(self, y_true, y_pred):
         # Reshape labels of each element of the batch such that the rows are the coord dimensions
         C_p = tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64)

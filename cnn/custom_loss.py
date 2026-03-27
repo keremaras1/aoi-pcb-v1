@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 
+@tf.function
 def custom_loss(y_true, y_pred):
     # Reshape labels of each element of the batch such that the rows are the coord dimensions
     C_p = tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64)
