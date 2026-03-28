@@ -73,12 +73,6 @@ venv.bak/
 # VS Code directories (if you use it alongside PyCharm)
 .vscode/
 
-# Ignore data files (optional)
-data/
-data/*.csv
-data/*.tsv
-data/*.json
-
 # Ignore large model files
 models/
 *.pb

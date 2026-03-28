@@ -2,7 +2,7 @@ import cv2
 import csv
 import random
 import warnings
-from config_loader import Config
+from aoi_pcb.config_loader import Config
 from pathlib import Path
 from tqdm import tqdm
 from scipy import ndimage

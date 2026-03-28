@@ -2,7 +2,7 @@ import csv
 import numpy as np
 from PIL import Image
 from pathlib import Path
-from data_processing.data_generator_utils import sort_alphanumeric, normalize_values
+from aoi_pcb.data.utils import sort_alphanumeric, normalize_values
 
 
 class DataEncoder:
