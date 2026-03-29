@@ -2,6 +2,10 @@
   "generator": {
     "gen_train": true,
     "gen_val": true,
+    "image_sources": {
+      "backlayer_path": "pcb_images/pcb_backlayer.png",
+      "ic_path": "pcb_images/ic.png"
+    },
     "train_data": {
       "dataset_size": 2000,
       "rotation_angle": 10,
@@ -15,12 +19,9 @@
       "rotation_angle": 10,
       "delta": 0.1,
       "data_dir": "datasets/validation/validation_dataset",
-      "labels_dir": "datasets/validation/",
+      "labels_dir": "datasets/validation",
       "label_file": "validation.csv"
-    },
-    "dataset_size": 2000,
-    "rotation_angle": 10,
-    "delta": 0.1
+    }
   },
   "encoder": {
     "train_data_splice": null,
