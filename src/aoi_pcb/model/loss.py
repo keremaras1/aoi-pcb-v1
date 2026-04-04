@@ -1,71 +1,88 @@
+"""Custom loss function combining coordinate MSE with a perpendicularity penalty.
+
+The loss has two components:
+
+1. **MSE loss** — standard mean squared error between predicted and true
+   keypoint coordinates, penalising positional inaccuracy.
+
+2. **Perpendicularity loss** — enforces that the four predicted edge vectors
+   form right angles, encouraging the model to output valid rectangles rather
+   than arbitrary quadrilaterals. Computed as the mean squared cosine of each
+   interior angle; this term is zero when all edges are perpendicular.
+
+The two terms are summed to form the final scalar loss.
+"""
+
 import tensorflow as tf
+
+# Selects and signs the four edge vectors from the corner coordinate matrix.
+# Each column encodes one edge as the signed sum of two corner positions.
+# Shape: (4, 4) — applied as C @ _EDGE_SELECTOR where C is (batch, 2, 4).
+_EDGE_SELECTOR = tf.constant(
+    [[-1.0,  0.0,  0.0, -1.0],
+     [ 0.0,  0.0,  1.0,  1.0],
+     [ 1.0,  1.0,  0.0,  0.0],
+     [ 0.0, -1.0, -1.0,  0.0]],
+    dtype=tf.float64,
+)
+
+# Reorders norm entries so that norm[i] aligns with its adjacent norm[i+1]
+# for computing pairwise products in the perpendicularity denominator.
+# Shape: (4, 4) — cyclic permutation of the identity.
+_NORMS_SELECTOR = tf.constant(
+    [[0., 0., 0., 1.],
+     [1., 0., 0., 0.],
+     [0., 1., 0., 0.],
+     [0., 0., 1., 0.]],
+    dtype=tf.float64,
+)
 
 
 @tf.function
-def custom_loss(y_true, y_pred):
-    # Reshape labels of each element of the batch such that the rows are the coord dimensions
+def custom_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+    """Compute the combined MSE + perpendicularity loss.
+
+    Args:
+        y_true: Ground-truth keypoint coordinates, shape ``(batch, 8)``.
+            Flattened as [x0, y0, x1, y1, x2, y2, x3, y3].
+        y_pred: Predicted keypoint coordinates, same shape as ``y_true``.
+
+    Returns:
+        Scalar loss tensor (float64).
+    """
+    # Reshape to (batch, 4, 2) then transpose to (batch, 2, 4) so each
+    # column holds the x and y coordinates of one corner
     C_p = tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64)
-    # Transpose each entry in the tensor
     C_p = tf.einsum('bij->bji', C_p)
 
-    # Create matrix to select the points to be subtracted
-    c_selector = tf.constant([[-1.0, 0.0, 0.0, -1.0],
-                              [0.0, 0.0, 1.0, 1.0],
-                              [1.0, 1.0, 0.0, 0.0],
-                              [0.0, -1.0, -1.0, 0.0]], dtype=tf.float64)
+    # Compute the four edge vectors: E = C @ _EDGE_SELECTOR
+    # Each column of E is a 2D vector representing one side of the rectangle
+    E_p = tf.linalg.matmul(C_p, _EDGE_SELECTOR)
+    E_p_T = tf.einsum('bij->bji', E_p)
 
-    # Dot product of C_p and C_selector for each element of the batch (implicit broadcasting)
-    E_p = tf.linalg.matmul(C_p, c_selector)
+    # E^T @ E is symmetric; its diagonal holds squared edge norms and its
+    # off-diagonal entries hold pairwise dot products between edges
+    E = tf.linalg.matmul(E_p_T, E_p)
 
-    # Transpose each entry of the tensor
-    E_p_transpose = tf.einsum('bij->bji', E_p)
-
-    # Take the dot product of the matrix with itself to create a new matrix.
-    # New matrix is symmetrical and contains the square of the norms of each e_vector on its main diag
-    # and the scalar of each combination of e_vectors
-    E = tf.linalg.matmul(E_p_transpose, E_p)
-
-    # Select diagonals of each matrix to get the square of the norms for each element in the batch
+    # Extract edge norms from the diagonal, reshape for broadcasting
     norms = tf.math.sqrt(tf.linalg.diag_part(E))
     norms = tf.reshape(norms, [-1, 1, norms.shape[1]])
 
-    # norm_selector helps us in reordering the entries in our norms vector
-    # is used to get the product of the desired norms by aligning the entries correctly
-    norms_selector = tf.constant([[0., 0., 0., 1.],
-                                  [1., 0., 0., 0.],
-                                  [0., 1., 0., 0.],
-                                  [0., 0., 1., 0.]], dtype=tf.float64)
+    # Compute reciprocal of each adjacent norm product (the cos denominator)
+    norms_denominator = tf.math.reciprocal(norms * tf.linalg.matmul(norms, _NORMS_SELECTOR))
+    norms_denominator_T = tf.einsum('bij->bji', norms_denominator)
 
-    # vector containing the reciprocal of the products of the norms
-    norms_denominator = tf.math.reciprocal(norms * tf.linalg.matmul(norms, norms_selector))
-    norms_denominator_transpose = tf.einsum('bij->bji', norms_denominator)
-
-    # Creating a vector containing each of the desired scalar products of E
-
-    # First three entries are in the first subdiagonal below the main diagonal
+    # Collect the four adjacent edge dot products (cos numerators):
+    # edges 0-1, 1-2, 2-3 are on the first subdiagonal; edge 3-0 is E[-1, 0]
     scalar_123 = tf.linalg.diag_part(E, k=-1)
-
-    # Fourth entry is the last one in the first column (reshape, to match ranks for concatonation)
     scalar_4 = tf.reshape(E[:, -1, 0], [-1, 1])
+    e_scalar = tf.reshape(tf.concat([scalar_123, scalar_4], 1), [-1, 1, 4])
 
-    # Concatenate the fourth entry to the vector with the first three entries to get desired vector
-    e_scalar = tf.concat([scalar_123, scalar_4], 1)
+    # cos(angle_i) = dot(e_i, e_{i+1}) / (|e_i| * |e_{i+1}|)
+    # perpendicularity_fac → 0 when all angles are 90°
+    perpendicularity_fac = tf.linalg.matmul(e_scalar, norms_denominator_T)
 
-    # Reshape to match the dimensions
-    e_scalar = tf.reshape(e_scalar, [-1, 1, e_scalar.shape[1]])
+    perp_loss = tf.reduce_mean(tf.math.square(perpendicularity_fac))
+    mse_loss = tf.reduce_mean(tf.math.square(tf.cast(y_true - y_pred, dtype=tf.float64)))
 
-    # Scalar product of norms_denominator and e_scalar
-    # Returns the sum of all cos values for each angle as the perpendicularity_fac
-    perpendicularity_fac = tf.linalg.matmul(e_scalar, norms_denominator_transpose)
-
-    # Calculate loss
-    perp_sqr_error = tf.math.square(perpendicularity_fac)
-    perp_mean_sqr_error = tf.reduce_mean(perp_sqr_error)
-
-    error = tf.cast(y_true - y_pred, dtype=tf.float64)
-    sqr_error = tf.math.square(error)
-    mean_sqr_error = tf.reduce_mean(sqr_error)
-
-    loss = mean_sqr_error + perp_mean_sqr_error
-
-    return loss
+    return mse_loss + perp_loss
