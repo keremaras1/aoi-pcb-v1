@@ -99,5 +99,10 @@ htmlcov/
 # Ignore TensorBoard logs
 logs/
 
-# Manually added directories and files
-datasets/
+# Generated datasets — run scripts/generate_dataset.py to populate
+datasets/training/
+datasets/validation/
+
+# Trained model artifacts — run scripts/train.py to produce
+experiments/
+*.keras
