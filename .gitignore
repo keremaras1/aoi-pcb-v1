@@ -106,3 +106,4 @@ datasets/validation/
 # Trained model artifacts — run scripts/train.py to produce
 experiments/
 *.keras
+/.python-version
