@@ -18,10 +18,14 @@ _SEPARABLE_CONV_FILTERS: int = 8  # Fixed per paper; independent of output dimen
 _SEPARABLE_CONV_KERNEL: int = 5
 
 
-def build_model(input_shape: tuple[int, ...], output_shape: int) -> keras.Model:
+def build_model(
+    input_shape: tuple[int, ...],
+    output_shape: int,
+    weights: str | None = "imagenet",
+) -> keras.Model:
     """Build the MobileNetV2-based keypoint detector.
 
-    The backbone (MobileNetV2) is loaded with ImageNet weights and frozen.
+    The backbone (MobileNetV2) is loaded with the specified weights and frozen.
     Only the custom regression head is trained.
 
     Architecture::
@@ -32,14 +36,19 @@ def build_model(input_shape: tuple[int, ...], output_shape: int) -> keras.Model:
 
     Args:
         input_shape: Shape of a single input image, e.g. ``(256, 256, 3)``.
+            Must be at least ``(160, 160, 3)`` for the 5×5 SeparableConv2D
+            to fit after MobileNetV2's 32× spatial downsampling.
         output_shape: Number of output values. For 4 keypoints this is 8
             (4 corners × 2 coordinates).
+        weights: Weights to load into MobileNetV2. Use ``"imagenet"`` for
+            pre-trained weights (default) or ``None`` for random initialisation
+            (useful for testing without downloading weights).
 
     Returns:
         A Keras Model named ``"keypoint_detector"``.
     """
     backbone = keras.applications.MobileNetV2(
-        weights="imagenet", include_top=False, input_shape=input_shape
+        weights=weights, include_top=False, input_shape=input_shape
     )
     backbone.trainable = False
 
