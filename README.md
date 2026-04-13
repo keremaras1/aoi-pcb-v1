@@ -1,92 +1,125 @@
-# AOI-Paper
+# AOI-PCB: Automated Optical Inspection for PCB Assembly
 
+A deep learning system for detecting IC component misplacement on printed circuit boards, implementing the approach described in:
 
+> *Automated Optical Inspection for Printed Circuit Board Assembly Manufacturing with Transfer Learning and Synthetic Data Generation* — [IEEE](https://ieeexplore.ieee.org/document/9837280)
 
-## Getting started
+## Overview
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+IC misplacement is a common defect in PCB assembly. This system localises an IC by predicting the coordinates of its four corner keypoints in a PCB image, framing the problem as a regression task rather than classification. The key contributions are:
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+- **Synthetic training data**: No hand-labeled real images are needed. A reference IC is blended onto real PCB background images with randomised rotation and positional offset, producing 2000 training and 300 validation images.
+- **Custom perpendicularity loss**: In addition to coordinate MSE, a penalty term enforces that the four predicted edge vectors form right angles — encouraging the model to output geometrically valid rectangles.
+- **Lightweight deployment target**: A frozen MobileNetV2 backbone (pre-trained on ImageNet) is used for feature extraction. Only the small custom head is trained, keeping the parameter count low.
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+## Model Architecture
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/k.aras/aoi-paper.git
-git branch -M main
-git push -uf origin main
+Input (256×256×3)
+  → GaussianNoise(σ=0.1)
+  → MobileNetV2 [frozen, ImageNet weights]
+  → Dropout(0.3)
+  → SeparableConv2D(8 filters, 5×5, ReLU)
+  → Flatten
+  → Dense(512, ReLU)
+  → Dropout(0.1)
+  → Dense(8)          ← 4 corners × (x, y), normalised to [0, 1]
 ```
 
-## Integrate with your tools
+## Results
 
-- [ ] [Set up project integrations](https://gitlab.com/k.aras/aoi-paper/-/settings/integrations)
+Training stabilises around epoch 600. On the validation set:
 
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- Combined loss: ~0.0001
+- Centre position MAE: ~0.01 (normalised coordinates)
+- The model reliably detects the IC footprint within the tolerance required for assembly inspection.
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+
+Requires Python ≥ 3.10 and TensorFlow 2.18.x (TF 2.18 is required for compatibility with `tensorflow-metal` on Apple Silicon).
+
+```bash
+git clone <repo>
+cd aoi-pcb-v1
+pip install -e ".[dev]"
+```
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 1. Generate the dataset
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+python scripts/generate_dataset.py --config config.json
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+This creates `datasets/training/` and `datasets/validation/` with PNG images and CSV label files. Source images (`pcb_images/ic.png`, `pcb_images/pcb_backlayer.png`) are committed to the repo.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### 2. Train
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+python scripts/train.py --config config.json --output-dir experiments/
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Saves the trained model to a timestamped subdirectory under `--output-dir`.
 
-## License
-For open source projects, say how it is licensed.
+### 3. Evaluate
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```bash
+python scripts/evaluate.py --config config.json --model-path experiments/<run>/model.keras
+```
+
+Add `--save-visuals` to write prediction overlay images to the output directory.
+
+### Notebooks
+
+Interactive walkthroughs are in `notebooks/`:
+- `training.ipynb` — data generation → model architecture → training loop → loss curves
+- `evaluation.ipynb` — load model → run predictions → visualise keypoint overlays → per-sample error histogram
+
+## Configuration
+
+All parameters are in `config.json`:
+
+| Section | Key parameters |
+|---------|----------------|
+| `generator` | `dataset_size`, `rotation_angle`, `delta`, output dirs, source image paths |
+| `encoder` | `normalize_data`, `normalize_labels`, `train_data_splice` |
+| `training` | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*` |
+| `metrics` | `x_weight`, `y_weight`, `angle_weight` |
+
+## Testing
+
+```bash
+pytest tests/
+```
+
+The test suite covers the config loader, data utilities, encoder (including error branches via mocks), model architecture, custom loss, and alignment metric. `data/generator.py` is excluded from unit tests — it requires the source images and is validated end-to-end by running `generate_dataset.py`.
+
+## Project Structure
+
+```
+aoi-pcb-v1/
+├── config.json
+├── pyproject.toml
+├── pcb_images/              # Source images for synthesis (committed)
+├── datasets/                # Generated data (gitignored, populate with generate_dataset.py)
+├── experiments/             # Training runs (gitignored)
+├── src/aoi_pcb/
+│   ├── config_loader.py
+│   ├── data/
+│   │   ├── generator.py
+│   │   ├── encoder.py
+│   │   └── utils.py
+│   └── model/
+│       ├── architecture.py
+│       ├── loss.py
+│       └── metric.py
+├── scripts/
+│   ├── generate_dataset.py
+│   ├── train.py
+│   └── evaluate.py
+├── notebooks/
+│   ├── training.ipynb
+│   └── evaluation.ipynb
+└── tests/
+```
