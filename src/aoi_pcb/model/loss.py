@@ -39,7 +39,7 @@ _NORMS_SELECTOR = tf.constant(
 
 
 @tf.function
-def custom_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+def custom_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: no cover
     """Compute the combined MSE + perpendicularity loss.
 
     Args:

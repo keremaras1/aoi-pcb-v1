@@ -1,8 +1,8 @@
 """Tests for the data processing pipeline: utils and encoder."""
 
 import csv
-import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -127,6 +127,7 @@ def _make_synthetic_dataset(
     return images_dir, label_path
 
 
+
 class _FakeConfig:
     """Minimal config stub for DataEncoder."""
     class _Encoder:
@@ -195,3 +196,85 @@ class TestDataEncoder:
 
         assert X.shape[0] == 3
         assert y.shape[0] == 3
+
+
+# ---------------------------------------------------------------------------
+# DataEncoder — validation error branches
+# ---------------------------------------------------------------------------
+
+class _NormalisedLabelsConfig:
+    class _Encoder:
+        train_data_splice = None
+        normalize_data = False
+        normalize_labels = True
+
+    encoder = _Encoder()
+
+
+class TestDataEncoderValidation:
+    """Validation error branches — uses mocks to inject arrays directly,
+    bypassing file I/O."""
+
+    def test_out_of_bounds_labels_raise(self) -> None:
+        """Labels > 1.0 after normalization raise ValueError."""
+        from aoi_pcb.data.encoder import DataEncoder
+
+        with patch('aoi_pcb.data.encoder.sort_alphanumeric', return_value=[]), \
+             patch.object(DataEncoder, 'image_to_numpy', return_value=np.zeros((1, 32, 32, 3))), \
+             patch.object(DataEncoder, 'coords_to_numpy', return_value=(
+                 np.array([[1.09, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]]),
+                 np.array([0.125, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]),
+                 np.array([0.5, 0.5]),
+             )):
+            encoder = DataEncoder(_NormalisedLabelsConfig())
+            with pytest.raises(ValueError, match="Labels are not normalised"):
+                encoder("fake_dir", "fake_labels.csv")
+
+    def test_out_of_bounds_ref_coords_raise(self) -> None:
+        """Reference coords > 1.0 after normalization raise ValueError."""
+        from aoi_pcb.data.encoder import DataEncoder
+
+        with patch('aoi_pcb.data.encoder.sort_alphanumeric', return_value=[]), \
+             patch.object(DataEncoder, 'image_to_numpy', return_value=np.zeros((1, 32, 32, 3))), \
+             patch.object(DataEncoder, 'coords_to_numpy', return_value=(
+                 np.array([[0.125, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]]),
+                 np.array([1.09, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]),
+                 np.array([0.5, 0.5]),
+             )):
+            encoder = DataEncoder(_NormalisedLabelsConfig())
+            with pytest.raises(ValueError, match="Reference coordinates are not normalised"):
+                encoder("fake_dir", "fake_labels.csv")
+
+    def test_out_of_bounds_ref_center_raise(self) -> None:
+        """Reference centre > 1.0 after normalization raises ValueError."""
+        from aoi_pcb.data.encoder import DataEncoder
+
+        with patch('aoi_pcb.data.encoder.sort_alphanumeric', return_value=[]), \
+             patch.object(DataEncoder, 'image_to_numpy', return_value=np.zeros((1, 32, 32, 3))), \
+             patch.object(DataEncoder, 'coords_to_numpy', return_value=(
+                 np.array([[0.125, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]]),
+                 np.array([0.125, 0.125, 0.875, 0.125, 0.125, 0.875, 0.875, 0.875]),
+                 np.array([1.09, 0.5]),
+             )):
+            encoder = DataEncoder(_NormalisedLabelsConfig())
+            with pytest.raises(ValueError, match="Reference centre is not normalised"):
+                encoder("fake_dir", "fake_labels.csv")
+
+    def test_float_train_data_splice_raises(self) -> None:
+        """Non-integer train_data_splice raises ValueError inside image_to_numpy."""
+        from aoi_pcb.data.encoder import DataEncoder
+
+        class _FloatSpliceConfig:
+            class _Encoder:
+                train_data_splice = 3.5
+                normalize_data = False
+                normalize_labels = False
+
+            encoder = _Encoder()
+
+        fake_img = Image.new("RGB", (32, 32))
+        with patch('aoi_pcb.data.encoder.sort_alphanumeric', return_value=['pcb_0.png']), \
+             patch('aoi_pcb.data.encoder.Image.open', return_value=fake_img):
+            encoder = DataEncoder(_FloatSpliceConfig())
+            with pytest.raises(ValueError, match="must be an integer"):
+                encoder("fake_dir", "fake_labels.csv")

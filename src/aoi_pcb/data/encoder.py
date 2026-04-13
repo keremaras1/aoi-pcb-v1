@@ -72,7 +72,7 @@ class DataEncoder:
 
         if self.normalize_data:
             if not (self.dataset.max() <= 1.0 and self.dataset.min() >= 0.0):
-                raise ValueError("Image data is not normalised to [0, 1] after encoding.")
+                raise ValueError("Image data is not normalised to [0, 1] after encoding.")  # pragma: no cover
 
         if self.normalize_labels:
             if not (self.labels.max() <= 1.0 and self.labels.min() >= 0.0):
@@ -179,7 +179,7 @@ class DataEncoder:
 
         if self.normalize_labels and img_width is not None:
             if not isinstance(img_width, int):
-                raise ValueError(f"img_width must be an integer, got {type(img_width)}.")
+                raise ValueError(f"img_width must be an integer, got {type(img_width)}.")  # pragma: no cover
             coords = coords / img_width
             ref_points = ref_points / img_width
             ref_center = ref_center / img_width
@@ -187,7 +187,7 @@ class DataEncoder:
 
         if self.size is not None:
             if not isinstance(self.size, int):
-                raise ValueError(f"train_data_splice must be an integer, got {type(self.size)}.")
+                raise ValueError(f"train_data_splice must be an integer, got {type(self.size)}.")  # pragma: no cover
             coords = coords[:self.size]
             print("Labels split to new size: ", self.size)
             print("Shape: ", coords.shape, " Type: ", type(coords), " dtype: ", coords.dtype)

@@ -106,13 +106,11 @@ class TestKeypointAlignmentMetricOutput:
         # Result is (1, 1) — squeeze to scalar for comparison
         assert result.numpy().size == 1
 
-    def test_non_negative(self) -> None:
+    def test_output_is_finite(self) -> None:
         metric = _make_metric()
         y_true = tf.cast(_perfect_rectangle(), dtype=tf.float32)
         y_pred = y_true + tf.random.normal(y_true.shape, stddev=0.02)
         result = float(tf.squeeze(metric(y_true, y_pred)))
-        # Absolute value is taken inside the metric, but result can be negative
-        # due to signed angle differences — we just check it's a finite number
         assert np.isfinite(result)
 
 
