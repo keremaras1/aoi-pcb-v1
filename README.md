@@ -36,12 +36,20 @@ Training stabilises around epoch 600. On the validation set:
 
 ## Installation
 
-Requires Python ≥ 3.10 and TensorFlow 2.18.x (TF 2.18 is required for compatibility with `tensorflow-metal` on Apple Silicon).
+Requires Python ≥ 3.10, pip > 19.0 (> 20.3 on macOS), and TensorFlow 2.18.
 
 ```bash
 git clone <repo>
 cd aoi-pcb-v1
+
+# CPU only
 pip install -e ".[dev]"
+
+# Apple Silicon GPU (tensorflow-metal)
+pip install -e ".[dev,metal]"
+
+# Linux / WSL2 CUDA GPU
+pip install -e ".[dev,cuda]"
 ```
 
 ## Usage
