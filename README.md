@@ -50,6 +50,9 @@ pip install -e ".[dev,metal]"
 
 # Linux / WSL2 CUDA GPU
 pip install -e ".[dev,cuda]"
+
+# With notebook dependencies (matplotlib, jupyterlab)
+pip install -e ".[dev,notebooks]"
 ```
 
 ## Usage

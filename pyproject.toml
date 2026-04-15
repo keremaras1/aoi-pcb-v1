@@ -30,6 +30,10 @@ metal = [
 cuda = [
     "tensorflow[and-cuda]==2.18.*",
 ]
+notebooks = [
+    "matplotlib",
+    "jupyterlab",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
