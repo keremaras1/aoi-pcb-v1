@@ -6,9 +6,9 @@ overlays on each PCB image.
 
 Usage::
 
-    python scripts/evaluate.py --model-path experiments/run_1/model
-    python scripts/evaluate.py --model-path experiments/run_1/model --save-visuals
-    python scripts/evaluate.py --model-path experiments/run_1/model --config path/to/config.json
+    python scripts/evaluate.py --model-path experiments/run_1/model.keras
+    python scripts/evaluate.py --model-path experiments/run_1/model.keras --save-visuals
+    python scripts/evaluate.py --model-path experiments/run_1/model.keras --config path/to/config.json
 """
 
 import argparse
