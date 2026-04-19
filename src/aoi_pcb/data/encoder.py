@@ -5,16 +5,15 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 from PIL import Image
-
 from aoi_pcb.data.utils import sort_alphanumeric, normalize_values
+from numpy.typing import NDArray
 
 
 class DataEncoder:
     """Encode a dataset of PCB images and keypoint labels into numpy arrays.
 
-    Reads PNG images and a CSV label file, optionally normalises pixel values
+    Reads PNG images and a CSV label file, optionally normalizes pixel values
     and coordinates to [0, 1], and optionally truncates the dataset to a
     fixed size.
 
@@ -25,7 +24,7 @@ class DataEncoder:
     """
 
     def __init__(self, config: Any) -> None:
-        """Initialise the encoder from a Config object.
+        """Initialize the encoder from a Config object.
 
         Args:
             config: Config instance; reads ``encoder.train_data_splice``,
@@ -54,14 +53,14 @@ class DataEncoder:
 
         Returns:
             Tuple of (images, labels, ref_coords, ref_center):
-                - images: ``(N, H, W, 3)`` float64 array, normalised to [0, 1]
+                - images: ``(N, H, W, 3)`` float64 array, normalized to [0, 1]
                   if ``normalize_data`` is True.
                 - labels: ``(N, 8)`` array of 4 keypoint (x, y) pairs.
                 - ref_coords: ``(8,)`` reference corner coordinates.
-                - ref_center: ``(2,)`` reference IC centre coordinates.
+                - ref_center: ``(2,)`` reference IC center coordinates.
 
         Raises:
-            ValueError: If normalisation is enabled but values are out of range.
+            ValueError: If normalization is enabled but values are out of range.
         """
         sorted_images = sort_alphanumeric(images_dir)
 
@@ -134,19 +133,19 @@ class DataEncoder:
     ) -> tuple[NDArray, NDArray, NDArray]:
         """Parse a CSV label file into numpy arrays.
 
-        The CSV is expected to have the reference keypoints and centre on the
+        The CSV is expected to have the reference keypoints and center on the
         first row, followed by one row of four (x, y) corner tuples per image.
 
         Args:
             csv_name: Path to the CSV file.
-            img_width: Image width used to normalise coordinates when
+            img_width: Image width used to normalize coordinates when
                 ``self.normalize_labels`` is True.
 
         Returns:
             Tuple of (coords, ref_points, ref_center):
                 - coords: ``(N, 8)`` array of flattened corner coordinates.
                 - ref_points: ``(8,)`` reference corner coordinates.
-                - ref_center: ``(2,)`` reference IC centre coordinates.
+                - ref_center: ``(2,)`` reference IC center coordinates.
 
         Raises:
             ValueError: If ``self.size`` or ``img_width`` have unexpected types.

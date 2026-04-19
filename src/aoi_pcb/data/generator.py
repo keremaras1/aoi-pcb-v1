@@ -117,7 +117,7 @@ def org_corners(
     Args:
         width: IC image width in pixels.
         height: IC image height in pixels.
-        center: ``(2,)`` array representing the IC centre position on the PCB.
+        center: ``(2,)`` array representing the IC center position on the PCB.
         angle: Rotation angle in radians.
 
     Returns:
@@ -149,7 +149,7 @@ def new_corners(
         R: 2x2 rotation matrix.
         icw: IC image width in pixels.
         ich: IC image height in pixels.
-        ic_center: ``(2,)`` array of the IC centre position on the PCB.
+        ic_center: ``(2,)`` array of the IC center position on the PCB.
 
     Returns:
         List of four ``(x, y)`` tuples representing the rotated corners in PCB coordinates.
@@ -159,7 +159,7 @@ def new_corners(
     corner_mat = R.dot(corner_mat.T)
     corner_mat = corner_mat.T + ic_center
     corner_mat = corner_mat.astype("uint32")
-    return [tuple(x) for x in corner_mat]
+    return [tuple(int(x) for x in row) for row in corner_mat]
 
 
 def get_layer(
@@ -193,7 +193,7 @@ def img_generator(
     """Generate a single synthetic PCB image with a randomly placed IC.
 
     The IC is rotated by a uniformly sampled angle in ``[-alpha, alpha]`` degrees
-    and displaced from centre by a random fraction of the available padding.
+    and displaced from center by a random fraction of the available padding.
 
     Args:
         alpha: Maximum rotation angle in degrees.
@@ -204,7 +204,7 @@ def img_generator(
     Returns:
         Tuple of (image, ic_center, corners, angle_degree):
             - image: ``(256, 256, 3)`` uint8 composited PCB image.
-            - ic_center: ``(2,)`` float array of the IC centre position.
+            - ic_center: ``(2,)`` float array of the IC center position.
             - corners: List of four ``(x, y)`` rotated corner positions.
             - angle_degree: The sampled rotation angle in degrees.
     """
@@ -252,11 +252,11 @@ def generate_dataset(
     """Generate and save a synthetic PCB image dataset with keypoint labels.
 
     Creates ``dataset_size`` images by calling :func:`img_generator` with
-    randomised rotation and displacement, writing each image to ``data_dir``
+    randomized rotation and displacement, writing each image to ``data_dir``
     and recording the four corner keypoints in a CSV file at ``labels_dir``.
 
     The first row of the CSV contains the reference keypoints (no rotation,
-    no displacement) used to initialise the metric.
+    no displacement) used to initialize the metric.
 
     Args:
         dataset_size: Number of images to generate.
@@ -282,7 +282,7 @@ def generate_dataset(
 
     with open(label_path, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow([ref_points, tuple(center_org.astype(int))])
+        writer.writerow([ref_points, tuple(int(x) for x in center_org)])
         print("Reference points written...")
 
         pbar = tqdm(desc='Generating images and labels...: ', total=dataset_size)
