@@ -6,9 +6,9 @@ overlays on each PCB image.
 
 Usage::
 
-    python scripts/evaluate.py --model-path experiments/run_1/model.keras
-    python scripts/evaluate.py --model-path experiments/run_1/model.keras --save-visuals
-    python scripts/evaluate.py --model-path experiments/run_1/model.keras --config path/to/config.json
+    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras
+    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --save-visuals
+    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --config path/to/config.json
 """
 
 import argparse
@@ -104,14 +104,12 @@ def main() -> None:
     print(f"Validation data shape: {X.shape}, Labels shape: {y.shape}")
 
     # --- Load model ---
-    # custom_objects maps saved function names to their current implementations
+    # compile=False skips Keras's attempt to deserialise the saved compile config,
+    # which fails for @tf.function-decorated losses. We re-compile immediately after.
     metric = KeypointAlignmentMetric(ref_center, ref_coords, config)
-    custom_objects = {
-        "custom_loss": custom_loss,
-        "__call__": metric.__call__,
-    }
 
-    model = tf.keras.models.load_model(args.model_path, custom_objects=custom_objects)
+    model = tf.keras.models.load_model(args.model_path, compile=False)
+    model.compile(loss=custom_loss, metrics=[metric.__call__])
     model.summary()
 
     # --- Evaluate ---
