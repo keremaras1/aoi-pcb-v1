@@ -1,12 +1,12 @@
 """Tests for the Config loader."""
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
-
 from aoi_pcb.config_loader import Config
+
+_REAL_CONFIG = Path(__file__).parent.parent / "config.json"
 
 
 @pytest.fixture
@@ -88,13 +88,13 @@ class TestProjectConfig:
     """Smoke test that the real config.json loads without errors."""
 
     def test_real_config_loads(self) -> None:
-        config = Config("config.json")
+        config = Config(str(_REAL_CONFIG))
         assert hasattr(config, "generator")
         assert hasattr(config, "training")
         assert hasattr(config, "metrics")
 
     def test_real_config_image_sources(self) -> None:
-        config = Config("config.json")
+        config = Config(str(_REAL_CONFIG))
         assert hasattr(config.generator, "image_sources")
         assert config.generator.image_sources.backlayer_path.endswith(".png")
         assert config.generator.image_sources.ic_path.endswith(".png")
