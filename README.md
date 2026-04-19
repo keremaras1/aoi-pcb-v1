@@ -6,9 +6,9 @@ A deep learning system for detecting IC component misplacement on printed circui
 
 ## Overview
 
-IC misplacement is a common defect in PCB assembly. This system localises an IC by predicting the coordinates of its four corner keypoints in a PCB image, framing the problem as a regression task rather than classification. The key contributions are:
+IC misplacement is a common defect in PCB assembly. This system localizes an IC by predicting the coordinates of its four corner keypoints in a PCB image, framing the problem as a regression task rather than classification. The key contributions are:
 
-- **Synthetic training data**: No hand-labeled real images are needed. A reference IC is blended onto real PCB background images with randomised rotation and positional offset, producing 2000 training and 300 validation images.
+- **Synthetic training data**: No hand-labeled real images are needed. A reference IC is blended onto real PCB background images with randomized rotation and positional offset, producing 2000 training and 300 validation images.
 - **Custom perpendicularity loss**: In addition to coordinate MSE, a penalty term enforces that the four predicted edge vectors form right angles — encouraging the model to output geometrically valid rectangles.
 - **Lightweight deployment target**: A frozen MobileNetV2 backbone (pre-trained on ImageNet) is used for feature extraction. Only the small custom head is trained, keeping the parameter count low.
 
@@ -28,10 +28,10 @@ Input (256×256×3)
 
 ## Results
 
-Training stabilises around epoch 600. On the validation set:
+Training stabilizes around epoch 600. On the validation set:
 
 - Combined loss: ~0.0001
-- Centre position MAE: ~0.01 (normalised coordinates)
+- Center position MAE: ~0.01 (normalized coordinates)
 - The model reliably detects the IC footprint within the tolerance required for assembly inspection.
 
 ## Installation
@@ -76,10 +76,14 @@ Saves the trained model to a timestamped subdirectory under `--output-dir`.
 ### 3. Evaluate
 
 ```bash
-python scripts/evaluate.py --config config.json --model-path experiments/<run>/model.keras
+# Auto-detect the most recently modified run
+python scripts/evaluate.py
+
+# Evaluate a specific run
+python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras
 ```
 
-Add `--save-visuals` to write prediction overlay images to the output directory.
+The config is loaded automatically from the run directory. Add `--save-visuals` to write prediction overlay images alongside the model.
 
 ### Notebooks
 
@@ -91,12 +95,12 @@ Interactive walkthroughs are in `notebooks/`:
 
 All parameters are in `config.json`:
 
-| Section | Key parameters |
-|---------|----------------|
-| `generator` | `dataset_size`, `rotation_angle`, `delta`, output dirs, source image paths |
-| `encoder` | `normalize_data`, `normalize_labels`, `train_data_splice` |
-| `training` | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*` |
-| `metrics` | `x_weight`, `y_weight`, `angle_weight` |
+| Section     | Key parameters                                                                     |
+|-------------|------------------------------------------------------------------------------------|
+| `generator` | `dataset_size`, `rotation_angle`, `delta`, `seed`, output dirs, source image paths |
+| `encoder`   | `normalize_data`, `normalize_labels`, `train_data_splice`                          |
+| `training`  | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*`                    |
+| `metrics`   | `x_weight`, `y_weight`, `angle_weight`                                             |
 
 ## Testing
 
