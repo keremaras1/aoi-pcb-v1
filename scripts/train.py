@@ -11,6 +11,7 @@ Usage::
 """
 
 import argparse
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -52,6 +53,7 @@ def main() -> None:
         Path("experiments") / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(args.config, output_dir / "config.json")
     print(f"Output directory: {output_dir}")
 
     # Report available GPUs
