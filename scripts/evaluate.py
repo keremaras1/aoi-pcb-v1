@@ -6,9 +6,10 @@ overlays on each PCB image.
 
 Usage::
 
+    python scripts/evaluate.py
+    python scripts/evaluate.py --save-visuals
     python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras
-    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --save-visuals
-    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --config path/to/config.json
+    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --config path/to/other_config.json
 """
 
 import argparse
@@ -32,13 +33,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model-path",
-        required=True,
-        help="Path to the saved Keras model directory.",
+        default=None,
+        help=(
+            "Path to the saved model file (.keras). "
+            "Defaults to the most recently modified run in experiments/."
+        ),
     )
     parser.add_argument(
         "--config",
-        default="config.json",
-        help="Path to the JSON configuration file (default: config.json).",
+        default=None,
+        help=(
+            "Path to a JSON configuration file. "
+            "Defaults to config.json inside the run directory."
+        ),
     )
     parser.add_argument(
         "--save-visuals",
@@ -91,7 +98,20 @@ def draw_keypoints(
 
 def main() -> None:
     args = parse_args()
-    config = Config(args.config)
+
+    # Resolve model path — default to the most recently modified run
+    if args.model_path:
+        model_path = args.model_path
+    else:
+        runs = sorted(Path("experiments").glob("*/model.keras"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if not runs:
+            raise FileNotFoundError("No trained model found in experiments/. Run train.py first.")
+        model_path = str(runs[0])
+    print(f"Model: {model_path}")
+
+    config_path = args.config or str(Path(model_path).parent / "config.json")
+    config = Config(config_path)
+    print(f"Config: {config_path}")
 
     # --- Load data ---
     encoder = DataEncoder(config)
@@ -108,7 +128,7 @@ def main() -> None:
     # which fails for @tf.function-decorated losses. We re-compile immediately after.
     metric = KeypointAlignmentMetric(ref_center, ref_coords, config)
 
-    model = tf.keras.models.load_model(args.model_path, compile=False)
+    model = tf.keras.models.load_model(model_path, compile=False)
     model.compile(loss=custom_loss, metrics=[metric.__call__])
     model.summary()
 
