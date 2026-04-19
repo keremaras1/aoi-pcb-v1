@@ -60,18 +60,26 @@ pip install -e ".[dev,notebooks]"
 ### 1. Generate the dataset
 
 ```bash
-python scripts/generate_dataset.py --config config.json
+# Use default config.json
+python scripts/generate_dataset.py
+
+# Use a custom config
+python scripts/generate_dataset.py --config path/to/config.json
 ```
 
-This creates `datasets/training/` and `datasets/validation/` with PNG images and CSV label files. Source images (`pcb_images/ic.png`, `pcb_images/pcb_backlayer.png`) are committed to the repo.
+Creates `datasets/training/` and `datasets/validation/` with PNG images and CSV label files. Source images (`pcb_images/ic.png`, `pcb_images/pcb_backlayer.png`) are committed to the repo.
 
 ### 2. Train
 
 ```bash
-python scripts/train.py --config config.json --output-dir experiments/
+# Use default config.json; save to experiments/run_YYYYMMDD_HHMMSS/
+python scripts/train.py
+
+# Use a custom config and output directory
+python scripts/train.py --config path/to/config.json --output-dir experiments/my_run
 ```
 
-Saves the trained model to a timestamped subdirectory under `--output-dir`.
+Each run saves `model.keras`, a training log CSV, and a `config.json` snapshot to its output directory.
 
 ### 3. Evaluate
 
@@ -81,9 +89,12 @@ python scripts/evaluate.py
 
 # Evaluate a specific run
 python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras
+
+# Save prediction overlay images
+python scripts/evaluate.py --save-visuals --n-visuals 20
 ```
 
-The config is loaded automatically from the run directory. Add `--save-visuals` to write prediction overlay images alongside the model.
+The config is loaded automatically from the run directory. Pass `--config` to override.
 
 ### Notebooks
 
