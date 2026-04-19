@@ -14,15 +14,13 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 import tensorflow as tf
-from keras import callbacks
-
 from aoi_pcb.config_loader import Config
 from aoi_pcb.data.encoder import DataEncoder
 from aoi_pcb.model.architecture import build_model
 from aoi_pcb.model.loss import custom_loss
 from aoi_pcb.model.metric import KeypointAlignmentMetric
+from keras import callbacks
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,16 +85,14 @@ def main() -> None:
     )
 
     # --- Callbacks ---
+    model_path = output_dir / "model.keras"
     es_args = config.get_init_kwargs("training.early_stopping")
     lr_args = config.get_init_kwargs("training.lr_schedule")
-    log_csv_args = config.get_init_kwargs("training.log_csv")
-
-    log_csv_args["filename"] = str(output_dir / log_csv_args.pop("file_name"))
 
     training_callbacks = [
         callbacks.EarlyStopping(**es_args),
         callbacks.ReduceLROnPlateau(**lr_args),
-        callbacks.CSVLogger(**log_csv_args),
+        callbacks.CSVLogger(output_dir / f"training_{model_path.stem}.csv"),
     ]
 
     # --- Training ---
@@ -109,7 +105,6 @@ def main() -> None:
     )
 
     # --- Save model ---
-    model_path = output_dir / "model.keras"
     model.save(model_path)
     print(f"Model saved to {model_path}")
 
