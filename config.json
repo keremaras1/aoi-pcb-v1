@@ -12,7 +12,8 @@
       "delta": 0.1,
       "data_dir": "datasets/training/training_dataset",
       "labels_dir": "datasets/training",
-      "label_file": "training.csv"
+      "label_file": "training.csv",
+      "seed": 42
     },
     "val_data": {
       "dataset_size": 2000,
@@ -20,7 +21,8 @@
       "delta": 0.1,
       "data_dir": "datasets/validation/validation_dataset",
       "labels_dir": "datasets/validation",
-      "label_file": "validation.csv"
+      "label_file": "validation.csv",
+      "seed": 42
     }
   },
   "encoder": {

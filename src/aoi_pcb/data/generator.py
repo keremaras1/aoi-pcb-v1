@@ -247,6 +247,7 @@ def generate_dataset(
     label_file: str,
     backlayer_path: str,
     ic_path: str,
+    seed: int = 42,
 ) -> None:
     """Generate and save a synthetic PCB image dataset with keypoint labels.
 
@@ -266,7 +267,11 @@ def generate_dataset(
         label_file: Filename of the CSV label file.
         backlayer_path: Path to the PCB background image.
         ic_path: Path to the IC component image.
+        seed: Random seed for reproducibility (default: 42).
     """
+    random.seed(seed)
+    np.random.seed(seed)
+
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     label_dir = Path(labels_dir)
