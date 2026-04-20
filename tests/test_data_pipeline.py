@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from aoi_pcb.data.generator import new_corners
 from aoi_pcb.data.utils import (
     MAX_PIXEL_VALUE,
     alphanum_key,
@@ -15,6 +16,51 @@ from aoi_pcb.data.utils import (
     rescale_values,
     sort_alphanumeric,
 )
+
+
+# ---------------------------------------------------------------------------
+# new_corners
+# ---------------------------------------------------------------------------
+
+class TestNewCorners:
+    def test_identity_rotation_translates_correctly(self) -> None:
+        """With no rotation, corners should be centered on ic_center."""
+        corners_og = [(0, 0), (10, 0), (0, 10), (10, 10)]
+        R = np.eye(2)
+        ic_center = np.array([128.0, 128.0])
+        result = new_corners(corners_og, R, 10, 10, ic_center)
+        # (0,0) - (5,5) + (128,128) = (123, 123)
+        assert result[0] == (123, 123)
+        # (10,0) - (5,5) + (128,128) = (133, 123)
+        assert result[1] == (133, 123)
+
+    def test_negative_coordinates_are_preserved(self) -> None:
+        """Corners near the image edge can be slightly negative after translation.
+        int32 must preserve the sign — uint32 would wrap -3 to ~4.29 billion."""
+        corners_og = [(0, 0), (10, 0), (0, 10), (10, 10)]
+        R = np.eye(2)
+        # Place IC center at (2, 2) — with icw=ich=10, TL corner lands at (2-5, 2-5) = (-3, -3)
+        ic_center = np.array([2.0, 2.0])
+        result = new_corners(corners_og, R, 10, 10, ic_center)
+        assert result[0] == (-3, -3), f"Expected (-3, -3), got {result[0]}"
+        # Sanity: no coordinate should look like a wrapped uint32 value (~4 billion)
+        for corner in result:
+            for coord in corner:
+                assert abs(coord) < 10_000, f"Coordinate {coord} looks like a wrapped uint32 value"
+
+    def test_returns_four_corners(self) -> None:
+        corners_og = [(0, 0), (10, 0), (0, 10), (10, 10)]
+        R = np.eye(2)
+        result = new_corners(corners_og, R, 10, 10, np.array([128.0, 128.0]))
+        assert len(result) == 4
+
+    def test_output_elements_are_tuples_of_ints(self) -> None:
+        corners_og = [(0, 0), (10, 0), (0, 10), (10, 10)]
+        R = np.eye(2)
+        result = new_corners(corners_og, R, 10, 10, np.array([50.0, 50.0]))
+        for corner in result:
+            assert len(corner) == 2
+            assert all(isinstance(v, (int, np.integer)) for v in corner)
 
 
 # ---------------------------------------------------------------------------
