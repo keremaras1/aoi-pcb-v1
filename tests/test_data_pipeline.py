@@ -107,10 +107,10 @@ def _make_synthetic_dataset(
     images_dir = tmp_path / "images"
     images_dir.mkdir()
 
-    # Write n_images solid-colour PNGs
+    # Write n_images solid-color PNGs
     for i in range(n_images):
-        colour = (i * 40, i * 20, 100)
-        img = Image.new("RGB", (img_size, img_size), colour)
+        color = (i * 40, i * 20, 100)
+        img = Image.new("RGB", (img_size, img_size), color)
         img.save(images_dir / f"pcb_{i}.png")
 
     # Write CSV: first row = reference points + center, rest = per-image corners
@@ -160,7 +160,7 @@ class TestDataEncoder:
         assert ref_coords.shape == (8,)
         assert ref_center.shape == (2,)
 
-    def test_normalised_images_in_range(self, tmp_path: Path) -> None:
+    def test_normalized_images_in_range(self, tmp_path: Path) -> None:
         from aoi_pcb.data.encoder import DataEncoder
 
         images_dir, label_path = _make_synthetic_dataset(tmp_path, n_images=3, img_size=32)
@@ -170,7 +170,7 @@ class TestDataEncoder:
         assert X.min() >= 0.0
         assert X.max() <= 1.0
 
-    def test_normalised_labels_in_range(self, tmp_path: Path) -> None:
+    def test_normalized_labels_in_range(self, tmp_path: Path) -> None:
         from aoi_pcb.data.encoder import DataEncoder
 
         images_dir, label_path = _make_synthetic_dataset(tmp_path, n_images=3, img_size=32)
@@ -227,7 +227,7 @@ class TestDataEncoderValidation:
                  np.array([0.5, 0.5]),
              )):
             encoder = DataEncoder(_NormalisedLabelsConfig())
-            with pytest.raises(ValueError, match="Labels are not normalised"):
+            with pytest.raises(ValueError, match="Labels are not normalized"):
                 encoder("fake_dir", "fake_labels.csv")
 
     def test_out_of_bounds_ref_coords_raise(self) -> None:
@@ -242,11 +242,11 @@ class TestDataEncoderValidation:
                  np.array([0.5, 0.5]),
              )):
             encoder = DataEncoder(_NormalisedLabelsConfig())
-            with pytest.raises(ValueError, match="Reference coordinates are not normalised"):
+            with pytest.raises(ValueError, match="Reference coordinates are not normalized"):
                 encoder("fake_dir", "fake_labels.csv")
 
     def test_out_of_bounds_ref_center_raise(self) -> None:
-        """Reference centre > 1.0 after normalization raises ValueError."""
+        """Reference center > 1.0 after normalization raises ValueError."""
         from aoi_pcb.data.encoder import DataEncoder
 
         with patch('aoi_pcb.data.encoder.sort_alphanumeric', return_value=[]), \
@@ -257,7 +257,7 @@ class TestDataEncoderValidation:
                  np.array([1.09, 0.5]),
              )):
             encoder = DataEncoder(_NormalisedLabelsConfig())
-            with pytest.raises(ValueError, match="Reference centre is not normalised"):
+            with pytest.raises(ValueError, match="Reference center is not normalized"):
                 encoder("fake_dir", "fake_labels.csv")
 
     def test_float_train_data_splice_raises(self) -> None:

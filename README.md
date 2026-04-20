@@ -23,7 +23,7 @@ Input (256×256×3)
   → Flatten
   → Dense(512, ReLU)
   → Dropout(0.1)
-  → Dense(8)          ← 4 corners × (x, y), normalised to [0, 1]
+  → Dense(8)          ← 4 corners × (x, y), normalized to [0, 1]
 ```
 
 ## Results

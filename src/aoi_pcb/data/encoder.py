@@ -71,15 +71,15 @@ class DataEncoder:
 
         if self.normalize_data:
             if not (self.dataset.max() <= 1.0 and self.dataset.min() >= 0.0):
-                raise ValueError("Image data is not normalised to [0, 1] after encoding.")  # pragma: no cover
+                raise ValueError("Image data is not normalized to [0, 1] after encoding.")  # pragma: no cover
 
         if self.normalize_labels:
             if not (self.labels.max() <= 1.0 and self.labels.min() >= 0.0):
-                raise ValueError("Labels are not normalised to [0, 1].")
+                raise ValueError("Labels are not normalized to [0, 1].")
             if not (self.ref_coords.max() <= 1.0 and self.ref_coords.min() >= 0.0):
-                raise ValueError("Reference coordinates are not normalised to [0, 1].")
+                raise ValueError("Reference coordinates are not normalized to [0, 1].")
             if not (self.ref_center.max() <= 1.0 and self.ref_center.min() >= 0.0):
-                raise ValueError("Reference centre is not normalised to [0, 1].")
+                raise ValueError("Reference center is not normalized to [0, 1].")
 
         return self.dataset, self.labels, self.ref_coords, self.ref_center
 

@@ -66,7 +66,7 @@ def draw_keypoints(
     actual: np.ndarray,
     predicted: np.ndarray,
     img_width: int,
-    normalised: bool,
+    normalized: bool,
 ) -> np.ndarray:
     """Draw actual (red) and predicted (blue) keypoint circles onto an image.
 
@@ -74,13 +74,13 @@ def draw_keypoints(
         image: HxWx3 uint8 image array.
         actual: Flattened array of 8 ground-truth coordinates.
         predicted: Flattened array of 8 predicted coordinates.
-        img_width: Image width; used to rescale normalised coordinates.
-        normalised: Whether coordinates are in [0, 1] and need rescaling.
+        img_width: Image width; used to rescale normalized coordinates.
+        normalized: Whether coordinates are in [0, 1] and need rescaling.
 
     Returns:
         Image array with circles drawn on it.
     """
-    if normalised:
+    if normalized:
         actual = actual * img_width
         predicted = predicted * img_width
 
@@ -157,7 +157,7 @@ def main() -> None:
                 actual=y[idx],
                 predicted=predictions[idx],
                 img_width=X.shape[1],
-                normalised=config.encoder.normalize_labels,
+                normalized=config.encoder.normalize_labels,
             )
             out_path = visuals_dir / f"pred_{idx:04d}.png"
             cv2.imwrite(str(out_path), cv2.cvtColor(img, cv2.COLOR_RGB2BGR))

@@ -2,8 +2,8 @@
 
 Measures prediction quality along three axes:
 
-- **X offset error** — mean horizontal displacement of the predicted IC centre.
-- **Y offset error** — mean vertical displacement of the predicted IC centre.
+- **X offset error** — mean horizontal displacement of the predicted IC center.
+- **Y offset error** — mean vertical displacement of the predicted IC center.
 - **Angle error** — mean rotation angle difference between predicted and true
   edge vectors, computed via the dot-product angle formula.
 
@@ -25,7 +25,7 @@ _EDGE_SELECTOR = tf.constant(
 class KeypointAlignmentMetric:
     """Weighted alignment metric comparing predicted and true IC keypoints.
 
-    Computes a scalar metric from the mean centre-position error (x, y) and
+    Computes a scalar metric from the mean center-position error (x, y) and
     the mean rotation angle error, combined as a weighted dot product.
 
     Example::
@@ -43,7 +43,7 @@ class KeypointAlignmentMetric:
         """Initialise the metric with reference keypoints and weight config.
 
         Args:
-            ref_center: Reference IC centre position, shape ``(2,)``.
+            ref_center: Reference IC center position, shape ``(2,)``.
             ref_coords: Reference corner coordinates, shape ``(8,)``.
             config: Config instance; reads ``config.metrics.x_weight``,
                 ``config.metrics.y_weight``, and ``config.metrics.angle_weight``.
@@ -75,7 +75,7 @@ class KeypointAlignmentMetric:
         C_p = tf.einsum('bij->bji', tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64))
         C_t = tf.einsum('bij->bji', tf.cast(tf.reshape(y_true, [-1, 4, 2]), dtype=tf.float64))
 
-        # Compute predicted and true IC centres as the mean of the four corners
+        # Compute predicted and true IC centers as the mean of the four corners
         center_t = tf.concat([
             tf.reshape(tf.math.reduce_mean(C_t[:, 0, :], axis=1), [-1, 1]),
             tf.reshape(tf.math.reduce_mean(C_t[:, 1, :], axis=1), [-1, 1]),

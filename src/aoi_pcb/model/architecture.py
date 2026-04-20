@@ -41,7 +41,7 @@ def build_model(
         output_shape: Number of output values. For 4 keypoints this is 8
             (4 corners × 2 coordinates).
         weights: Weights to load into MobileNetV2. Use ``"imagenet"`` for
-            pre-trained weights (default) or ``None`` for random initialisation
+            pre-trained weights (default) or ``None`` for random initialization
             (useful for testing without downloading weights).
 
     Returns:
