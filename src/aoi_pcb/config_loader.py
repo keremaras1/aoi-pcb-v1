@@ -27,6 +27,9 @@ class Config:
             config_data = json.load(f)
         self._set_attributes(config_data)
 
+    def __getattr__(self, name: str) -> Any:
+        raise AttributeError(f"Config has no attribute '{name}'")
+
     def _set_attributes(self, config_data: dict[str, Any]) -> None:
         for key, value in config_data.items():
             if isinstance(value, dict):
