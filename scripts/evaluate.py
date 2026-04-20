@@ -129,7 +129,7 @@ def main() -> None:
     metric = KeypointAlignmentMetric(ref_center, ref_coords, config)
 
     model = tf.keras.models.load_model(model_path, compile=False)
-    model.compile(loss=custom_loss, metrics=[metric.__call__])
+    model.compile(loss=custom_loss, metrics=[metric.alignment_metric])
     model.summary()
 
     # --- Evaluate ---

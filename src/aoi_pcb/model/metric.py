@@ -57,8 +57,11 @@ class KeypointAlignmentMetric:
             )
         )
 
+    def __call__(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:
+        return self.alignment_metric(y_true, y_pred)
+
     @tf.function
-    def __call__(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: no cover
+    def alignment_metric(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: no cover
         """Compute the weighted alignment metric for a batch of predictions.
 
         Args:

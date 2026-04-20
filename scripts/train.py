@@ -83,7 +83,7 @@ def main() -> None:
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=config.training.optimizer_lr),
         loss=custom_loss,
-        metrics=[metric.__call__],
+        metrics=[metric.alignment_metric],
     )
 
     # --- Callbacks ---
