@@ -2,7 +2,6 @@
 
 import csv
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 from PIL import Image
@@ -23,7 +22,7 @@ class DataEncoder:
         images, labels, ref_coords, ref_center = encoder(images_dir, labels_csv)
     """
 
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config) -> None:
         """Initialize the encoder from a Config object.
 
         Args:
@@ -33,17 +32,11 @@ class DataEncoder:
         self.size: int | None = config.encoder.train_data_splice
         self.normalize_data: bool = config.encoder.normalize_data
         self.normalize_labels: bool = config.encoder.normalize_labels
-        self.dataset: NDArray = np.array([])
-        self.labels: NDArray = np.array([])
-        self.ref_coords: NDArray = np.array([])
-        self.ref_center: NDArray = np.array([])
 
     def __call__(
         self,
         images_dir: str,
         labels_dir: str,
-        *args: Any,
-        **kwargs: Any,
     ) -> tuple[NDArray, NDArray, NDArray, NDArray]:
         """Run the encoding pipeline.
 
@@ -53,8 +46,8 @@ class DataEncoder:
 
         Returns:
             Tuple of (images, labels, ref_coords, ref_center):
-                - images: ``(N, H, W, 3)`` float64 array, normalized to [0, 1]
-                  if ``normalize_data`` is True.
+                - images: ``(N, H, W, 3)`` uint8 array in [0, 255] when
+                  ``normalize_data`` is False; float64 array in [0, 1] when True.
                 - labels: ``(N, 8)`` array of 4 keypoint (x, y) pairs.
                 - ref_coords: ``(8,)`` reference corner coordinates.
                 - ref_center: ``(2,)`` reference IC center coordinates.
@@ -64,24 +57,24 @@ class DataEncoder:
         """
         sorted_images = sort_alphanumeric(images_dir)
 
-        self.dataset = self.image_to_numpy(Path(images_dir), sorted_images)
-        self.labels, self.ref_coords, self.ref_center = self.coords_to_numpy(
-            labels_dir, self.dataset.shape[1]
+        dataset = self.image_to_numpy(Path(images_dir), sorted_images)
+        labels, ref_coords, ref_center = self.coords_to_numpy(
+            labels_dir, dataset.shape[1]
         )
 
         if self.normalize_data:
-            if not (self.dataset.max() <= 1.0 and self.dataset.min() >= 0.0):
+            if not (dataset.max() <= 1.0 and dataset.min() >= 0.0):
                 raise ValueError("Image data is not normalized to [0, 1] after encoding.")  # pragma: no cover
 
         if self.normalize_labels:
-            if not (self.labels.max() <= 1.0 and self.labels.min() >= 0.0):
+            if not (labels.max() <= 1.0 and labels.min() >= 0.0):
                 raise ValueError("Labels are not normalized to [0, 1].")
-            if not (self.ref_coords.max() <= 1.0 and self.ref_coords.min() >= 0.0):
+            if not (ref_coords.max() <= 1.0 and ref_coords.min() >= 0.0):
                 raise ValueError("Reference coordinates are not normalized to [0, 1].")
-            if not (self.ref_center.max() <= 1.0 and self.ref_center.min() >= 0.0):
+            if not (ref_center.max() <= 1.0 and ref_center.min() >= 0.0):
                 raise ValueError("Reference center is not normalized to [0, 1].")
 
-        return self.dataset, self.labels, self.ref_coords, self.ref_center
+        return dataset, labels, ref_coords, ref_center
 
     def image_to_numpy(
         self,

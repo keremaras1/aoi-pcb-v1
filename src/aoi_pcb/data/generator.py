@@ -158,7 +158,7 @@ def new_corners(
     corner_mat = corner_mat - np.array([icw / 2, ich / 2])
     corner_mat = R.dot(corner_mat.T)
     corner_mat = corner_mat.T + ic_center
-    corner_mat = corner_mat.astype("uint32")
+    corner_mat = corner_mat.astype("int32")
     return [tuple(int(x) for x in row) for row in corner_mat]
 
 
@@ -187,8 +187,12 @@ def get_layer(
 def img_generator(
     alpha: float,
     delta_weight: float,
-    backlayer_path: str,
-    ic_path: str,
+    back_height: int,
+    back_width: int,
+    backlayer: np.ndarray,
+    ic_height: int,
+    ic_width: int,
+    front_layer_base: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, list[tuple], float]:
     """Generate a single synthetic PCB image with a randomly placed IC.
 
@@ -198,8 +202,12 @@ def img_generator(
     Args:
         alpha: Maximum rotation angle in degrees.
         delta_weight: Fraction of available border space used for random displacement.
-        backlayer_path: Path to the PCB background image.
-        ic_path: Path to the IC component image.
+        back_height: Height of the PCB background image in pixels.
+        back_width: Width of the PCB background image in pixels.
+        backlayer: Pre-loaded RGBA background image array.
+        ic_height: Height of the IC image in pixels (before rotation).
+        ic_width: Width of the IC image in pixels (before rotation).
+        front_layer_base: Pre-loaded RGBA IC image array (before rotation).
 
     Returns:
         Tuple of (image, ic_center, corners, angle_degree):
@@ -211,10 +219,7 @@ def img_generator(
     angle_degree = np.random.uniform(-alpha, alpha)
     angle_radian = math.radians(angle_degree)
 
-    back_height, back_width, rescale_factor, backlayer = get_layer(backlayer_path, shape=_IMAGE_SIZE)
-    ic_height, ic_width, _, front_layer = get_layer(ic_path, shape=None, factor=rescale_factor)
-
-    front_layer = ndimage.rotate(front_layer, angle_degree, reshape=True)
+    front_layer = ndimage.rotate(front_layer_base, angle_degree, reshape=True)
     front_height, front_width, _ = front_layer.shape
 
     width_delta = int((back_width - front_width) / 2)
@@ -278,7 +283,12 @@ def generate_dataset(
     label_dir.mkdir(parents=True, exist_ok=True)
     label_path = label_dir / label_file
 
-    _, center_org, ref_points, _ = img_generator(0, 0, backlayer_path, ic_path)
+    back_height, back_width, rescale_factor, backlayer = get_layer(backlayer_path, shape=_IMAGE_SIZE)
+    ic_height, ic_width, _, front_layer_base = get_layer(ic_path, shape=None, factor=rescale_factor)
+
+    _, center_org, ref_points, _ = img_generator(
+        0, 0, back_height, back_width, backlayer, ic_height, ic_width, front_layer_base
+    )
 
     with open(label_path, 'w') as f:
         writer = csv.writer(f)
@@ -287,7 +297,9 @@ def generate_dataset(
 
         pbar = tqdm(desc='Generating images and labels...: ', total=dataset_size)
         for i in range(dataset_size):
-            img, _, corners, _ = img_generator(rotation_angle, delta, backlayer_path, ic_path)
+            img, _, corners, _ = img_generator(
+                rotation_angle, delta, back_height, back_width, backlayer, ic_height, ic_width, front_layer_base
+            )
             img_path = data_dir / f"pcb_{i}.png"
             cv2.imwrite(str(img_path), img)
             writer.writerow(corners)

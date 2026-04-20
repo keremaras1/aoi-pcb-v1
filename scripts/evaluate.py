@@ -18,11 +18,9 @@ from pathlib import Path
 import cv2
 import numpy as np
 import tensorflow as tf
-from PIL import Image
 
 from aoi_pcb.config_loader import Config
 from aoi_pcb.data.encoder import DataEncoder
-from aoi_pcb.data.utils import sort_alphanumeric
 from aoi_pcb.model.loss import custom_loss
 from aoi_pcb.model.metric import KeypointAlignmentMetric
 
@@ -144,16 +142,14 @@ def main() -> None:
 
     # --- Save visualisations ---
     if args.save_visuals:
-        visuals_dir = Path(args.model_path) / "visuals"
+        visuals_dir = Path(model_path).parent / "visuals"
         visuals_dir.mkdir(parents=True, exist_ok=True)
 
-        image_files = sort_alphanumeric(data_dir)
-        n = min(args.n_visuals, len(image_files))
+        n = min(args.n_visuals, len(X))
 
         for idx in range(n):
-            img = np.array(Image.open(Path(data_dir) / image_files[idx]))
             img = draw_keypoints(
-                img,
+                X[idx].copy(),
                 actual=y[idx],
                 predicted=predictions[idx],
                 img_width=X.shape[1],

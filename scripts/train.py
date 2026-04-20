@@ -111,10 +111,11 @@ def main() -> None:
     print(f"Model saved to {model_path}")
 
     # --- Summary ---
-    final_loss = history.history["loss"][-1]
-    final_val_loss = history.history["val_loss"][-1]
-    print(f"Final train loss: {final_loss:.6f} | val loss: {final_val_loss:.6f}")
-    print(f"Trained for {len(history.history['loss'])} epochs.")
+    n_epochs = len(history.history["loss"])
+    best_val_loss = min(history.history["val_loss"])
+    best_epoch = history.history["val_loss"].index(best_val_loss) + 1
+    print(f"Trained for {n_epochs} epochs.")
+    print(f"Best val loss: {best_val_loss:.6f} at epoch {best_epoch} (saved model weights)")
 
 
 if __name__ == "__main__":
