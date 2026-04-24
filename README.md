@@ -1,45 +1,75 @@
 # AOI-PCB: Automated Optical Inspection for PCB Assembly
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+[![CI](https://github.com/keremaras/aoi-pcb-v1/actions/workflows/ci.yml/badge.svg)](https://github.com/keremaras/aoi-pcb-v1/actions/workflows/ci.yml)
+
 A deep learning system for detecting IC component misplacement on printed circuit boards, implementing the approach described in:
 
-> *Automated Optical Inspection for Printed Circuit Board Assembly Manufacturing with Transfer Learning and Synthetic Data Generation* — [IEEE](https://ieeexplore.ieee.org/document/9837280)
+> *Automated Optical Inspection for Printed Circuit Board Assembly Manufacturing with Transfer Learning and Synthetic Data Generation* — Saif, Aras & Giuseppi, MED 2022 — [IEEE Xplore](https://ieeexplore.ieee.org/document/9837280)
 
 ## Overview
 
-IC misplacement is a common defect in PCB assembly. This system localizes an IC by predicting the coordinates of its four corner keypoints in a PCB image, framing the problem as a regression task rather than classification. The key contributions are:
+IC misplacement is one of the most common defects in PCB assembly: a component lands at the wrong position or rotation, causing electrical failures that are costly to catch downstream. Traditional AOI systems rely on large hand-labeled image datasets that are expensive to collect and tightly coupled to specific board designs.
 
-- **Synthetic training data**: No hand-labeled real images are needed. A reference IC is blended onto real PCB background images with randomized rotation and positional offset, producing 2000 training and 300 validation images.
-- **Custom perpendicularity loss**: In addition to coordinate MSE, a penalty term enforces that the four predicted edge vectors form right angles — encouraging the model to output geometrically valid rectangles.
-- **Lightweight deployment target**: A frozen MobileNetV2 backbone (pre-trained on ImageNet) is used for feature extraction. Only the small custom head is trained, keeping the parameter count low.
+This project reframes the problem as a **keypoint regression task**: given a PCB image, predict the (x, y) coordinates of all four corners of the IC bounding box. Three design choices make this practical without real labeled data:
+
+- **Synthetic training data** — A reference IC is blended onto real PCB background images with randomised rotation and offset, generating 2,000 training and 2,000 validation images programmatically. No hand-labelling required.
+- **Custom perpendicularity loss** — In addition to coordinate MSE, a penalty term enforces that the four predicted corner vectors form right angles, encouraging geometrically valid (rectangular) outputs.
+- **Frozen MobileNetV2 backbone** — Pre-trained ImageNet features are used as-is. Only the small custom regression head is trained, keeping the parameter count low and training fast.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+  A["ic.png +<br/>pcb_backlayer.png"] --> B["Generator<br/>rotate + blend"]
+  B --> C["Synthetic<br/>Dataset"]
+  C --> D["DataEncoder"]
+  D --> E["MobileNetV2<br/>frozen"]
+  E --> F["Custom Head<br/>SepConv + Dense"]
+  F --> G["8 keypoints"]
+  G --> H["Custom Loss<br/>MSE + Perp"]
+  H --> I["Trained<br/>model.keras"]
+  I --> J["Evaluator<br/>overlay + metrics"]
+```
+
+| Stage | Source |
+|-------|--------|
+| Generator | `src/aoi_pcb/data/generator.py` |
+| DataEncoder | `src/aoi_pcb/data/encoder.py` |
+| MobileNetV2 + Custom Head | `src/aoi_pcb/model/architecture.py` |
+| Custom Loss / Metric | `src/aoi_pcb/model/loss.py`, `metric.py` |
+| Evaluator | `scripts/evaluate.py`, `notebooks/evaluation.ipynb` |
 
 ## Model Architecture
 
 ```
-Input (256×256×3)
+Input (256×256×3, uint8)
   → GaussianNoise(σ=0.1)
+  → preprocess_input        [0, 255] → [−1, 1]
   → MobileNetV2 [frozen, ImageNet weights]
   → Dropout(0.3)
   → SeparableConv2D(8 filters, 5×5, ReLU)
   → Flatten
   → Dense(512, ReLU)
   → Dropout(0.1)
-  → Dense(8)          ← 4 corners × (x, y), normalized to [0, 1]
+  → Dense(8)                ← 4 corners × (x, y), normalised to [0, 1]
 ```
 
 ## Results
 
-Training stabilizes around epoch 600. On the validation set:
+Training stabilises around epoch 600. On the validation set:
 
 - Combined loss: ~0.0001
-- Center position MAE: ~0.01 (normalized coordinates)
+- Center position MAE: ~0.01 (normalised coordinates)
 - The model reliably detects the IC footprint within the tolerance required for assembly inspection.
 
 ## Installation
 
-Requires Python ≥ 3.10, pip > 19.0 (> 20.3 on macOS), and TensorFlow 2.18.
+Requires Python ≥ 3.10 and TensorFlow 2.18.
 
 ```bash
-git clone <repo>
+git clone https://github.com/keremaras/aoi-pcb-v1.git
 cd aoi-pcb-v1
 
 # CPU only
@@ -60,26 +90,22 @@ pip install -e ".[dev,notebooks]"
 ### 1. Generate the dataset
 
 ```bash
-# Use default config.json
 python scripts/generate_dataset.py
-
-# Use a custom config
+# or with a custom config:
 python scripts/generate_dataset.py --config path/to/config.json
 ```
 
-Creates `datasets/training/` and `datasets/validation/` with PNG images and CSV label files. Source images (`pcb_images/ic.png`, `pcb_images/pcb_backlayer.png`) are committed to the repo.
+Creates `datasets/training/` and `datasets/validation/` with PNG images and CSV label files.
 
 ### 2. Train
 
 ```bash
-# Use default config.json; save to experiments/run_YYYYMMDD_HHMMSS/
 python scripts/train.py
-
-# Use a custom config and output directory
+# or with a custom config and output directory:
 python scripts/train.py --config path/to/config.json --output-dir experiments/my_run
 ```
 
-Each run saves `model.keras`, a training log CSV, and a `config.json` snapshot to its output directory.
+Each run saves `model.keras`, a training log CSV, and a `config.json` snapshot to a timestamped directory under `experiments/`.
 
 ### 3. Evaluate
 
@@ -94,8 +120,6 @@ python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.ke
 python scripts/evaluate.py --save-visuals --n-visuals 20
 ```
 
-The config is loaded automatically from the run directory. Pass `--config` to override.
-
 ### Notebooks
 
 Interactive walkthroughs are in `notebooks/`:
@@ -104,14 +128,14 @@ Interactive walkthroughs are in `notebooks/`:
 
 ## Configuration
 
-All parameters are in `config.json`:
+All parameters live in `config.json`:
 
-| Section     | Key parameters                                                                     |
-|-------------|------------------------------------------------------------------------------------|
+| Section | Key parameters |
+|---------|----------------|
 | `generator` | `dataset_size`, `rotation_angle`, `delta`, `seed`, output dirs, source image paths |
-| `encoder`   | `normalize_data`, `normalize_labels`, `train_data_splice`                          |
-| `training`  | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*`                    |
-| `metrics`   | `x_weight`, `y_weight`, `angle_weight`                                             |
+| `encoder` | `normalize_data`, `normalize_labels`, `train_data_splice` |
+| `training` | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*` |
+| `metrics` | `x_weight`, `y_weight`, `angle_weight` |
 
 ## Testing
 
@@ -119,7 +143,7 @@ All parameters are in `config.json`:
 pytest tests/
 ```
 
-The test suite covers the config loader, data utilities, encoder (including error branches via mocks), model architecture, custom loss, and alignment metric. `data/generator.py` is excluded from unit tests — it requires the source images and is validated end-to-end by running `generate_dataset.py`.
+The test suite covers the config loader, data utilities, the full synthetic generation pipeline, encoder (including error branches), model architecture, custom loss, and alignment metric — with 100% statement coverage across all source modules. Tests are fully hermetic: no real PCB images or pre-generated datasets required.
 
 ## Project Structure
 
@@ -127,9 +151,10 @@ The test suite covers the config loader, data utilities, encoder (including erro
 aoi-pcb-v1/
 ├── config.json
 ├── pyproject.toml
-├── pcb_images/              # Source images for synthesis (committed)
-├── datasets/                # Generated data (gitignored, populate with generate_dataset.py)
-├── experiments/             # Training runs (gitignored)
+├── LICENSE
+├── pcb_images/              # Reference images for synthesis
+├── datasets/                # Generated data (gitignored — run generate_dataset.py)
+├── experiments/             # Training runs  (gitignored — run train.py)
 ├── src/aoi_pcb/
 │   ├── config_loader.py
 │   ├── data/
@@ -148,4 +173,18 @@ aoi-pcb-v1/
 │   ├── training.ipynb
 │   └── evaluation.ipynb
 └── tests/
+```
+
+## Citation
+
+```bibtex
+@INPROCEEDINGS{9837280,
+  author={Saif, Syed Saad and Aras, Kerem and Giuseppi, Alessandro},
+  booktitle={2022 30th Mediterranean Conference on Control and Automation (MED)},
+  title={Automated Optical Inspection for Printed Circuit Board Assembly Manufacturing
+         with Transfer Learning and Synthetic Data Generation},
+  year={2022},
+  pages={318-323},
+  doi={10.1109/MED54222.2022.9837280}
+}
 ```
