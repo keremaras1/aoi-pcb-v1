@@ -3,7 +3,6 @@
 import csv
 import math
 import random
-import warnings
 from pathlib import Path
 
 import cv2
@@ -11,8 +10,6 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 from tqdm import tqdm
-
-from aoi_pcb.config_loader import Config
 
 _IMAGE_SIZE: tuple[int, int] = (256, 256)
 _ALPHA_FILL: int = 255
@@ -304,21 +301,3 @@ def generate_dataset(
             cv2.imwrite(str(img_path), img)
             writer.writerow(corners)
             pbar.update(1)
-
-
-if __name__ == '__main__':
-    warnings.filterwarnings("ignore", message="libpng warning: iCCP: known incorrect sRGB profile")
-    config = Config()
-
-    backlayer = config.generator.image_sources.backlayer_path
-    ic = config.generator.image_sources.ic_path
-
-    if config.generator.gen_train:
-        print("Generating training data...")
-        train_args = config.get_init_kwargs("generator.train_data")
-        generate_dataset(**train_args, backlayer_path=backlayer, ic_path=ic)
-
-    if config.generator.gen_val:
-        print("Generating validation data...")
-        val_args = config.get_init_kwargs("generator.val_data")
-        generate_dataset(**val_args, backlayer_path=backlayer, ic_path=ic)
