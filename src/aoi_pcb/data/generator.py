@@ -227,8 +227,10 @@ def img_generator(
     ic_center = np.array([back_width / 2 + cdx, back_height / 2 + cdy])
     front_layer = cv2.copyMakeBorder(
         front_layer,
-        height_delta + cdy, height_delta - cdy,
-        width_delta + cdx, width_delta - cdx,
+        height_delta + cdy,
+        height_delta - cdy,
+        width_delta + cdx,
+        width_delta - cdx,
         cv2.BORDER_CONSTANT,
         value=(0, 0, 0, 0),
     )
@@ -280,22 +282,31 @@ def generate_dataset(
     label_dir.mkdir(parents=True, exist_ok=True)
     label_path = label_dir / label_file
 
-    back_height, back_width, rescale_factor, backlayer = get_layer(backlayer_path, shape=_IMAGE_SIZE)
+    back_height, back_width, rescale_factor, backlayer = get_layer(
+        backlayer_path, shape=_IMAGE_SIZE
+    )
     ic_height, ic_width, _, front_layer_base = get_layer(ic_path, shape=None, factor=rescale_factor)
 
     _, center_org, ref_points, _ = img_generator(
         0, 0, back_height, back_width, backlayer, ic_height, ic_width, front_layer_base
     )
 
-    with open(label_path, 'w') as f:
+    with open(label_path, "w") as f:
         writer = csv.writer(f)
         writer.writerow([ref_points, tuple(int(x) for x in center_org)])
         print("Reference points written...")
 
-        pbar = tqdm(desc='Generating images and labels...: ', total=dataset_size)
+        pbar = tqdm(desc="Generating images and labels...: ", total=dataset_size)
         for i in range(dataset_size):
             img, _, corners, _ = img_generator(
-                rotation_angle, delta, back_height, back_width, backlayer, ic_height, ic_width, front_layer_base
+                rotation_angle,
+                delta,
+                back_height,
+                back_width,
+                backlayer,
+                ic_height,
+                ic_width,
+                front_layer_base,
             )
             img_path = data_dir / f"pcb_{i}.png"
             cv2.imwrite(str(img_path), img)

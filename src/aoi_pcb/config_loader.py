@@ -23,7 +23,7 @@ class Config:
         Args:
             config_path: Path to the JSON configuration file.
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config_data = json.load(f)
         self._set_attributes(config_data)
 

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from aoi_pcb.config_loader import Config
 
 _REAL_CONFIG = Path(__file__).parent.parent / "config.json"

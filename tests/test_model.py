@@ -1,12 +1,9 @@
 """Tests for the model architecture."""
 
-import numpy as np
 import pytest
 import tensorflow as tf
 
 from aoi_pcb.model.architecture import (
-    _CONV_DROPOUT,
-    _DENSE_DROPOUT,
     _DENSE_UNITS,
     _GAUSSIAN_NOISE_STDDEV,
     _SEPARABLE_CONV_FILTERS,
@@ -15,7 +12,7 @@ from aoi_pcb.model.architecture import (
 )
 
 INPUT_SHAPE = (192, 192, 3)  # min viable: 160×160; 192 gives 6×6 after MobileNetV2's 32× downsample
-OUTPUT_SHAPE = 8             # 4 keypoints × 2 coordinates
+OUTPUT_SHAPE = 8  # 4 keypoints × 2 coordinates
 
 
 @pytest.fixture(scope="module")
@@ -39,14 +36,16 @@ class TestModelOutputShape:
 class TestBackboneFrozen:
     def test_backbone_is_not_trainable(self, model: tf.keras.Model) -> None:
         backbone = next(
-            layer for layer in model.layers
+            layer
+            for layer in model.layers
             if isinstance(layer, tf.keras.Model) and "mobilenet" in layer.name.lower()
         )
         assert backbone.trainable is False
 
     def test_backbone_weights_are_non_trainable(self, model: tf.keras.Model) -> None:
         backbone = next(
-            layer for layer in model.layers
+            layer
+            for layer in model.layers
             if isinstance(layer, tf.keras.Model) and "mobilenet" in layer.name.lower()
         )
         assert len(backbone.non_trainable_weights) > 0
@@ -82,7 +81,6 @@ class TestGradientFlow:
 
         grads = tape.gradient(loss, model.trainable_weights)
         assert any(g is not None for g in grads), "No gradients found for trainable weights."
-
 
 
 class TestModelName:

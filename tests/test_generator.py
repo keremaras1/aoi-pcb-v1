@@ -36,6 +36,7 @@ def fake_pcb_assets(tmp_path: Path) -> tuple[str, str]:
 # add_tuple
 # ---------------------------------------------------------------------------
 
+
 class TestAddTuple:
     def test_element_wise_sum(self) -> None:
         assert add_tuple((1, 2, 3), (4, 5, 6)) == (5, 7, 9)
@@ -50,6 +51,7 @@ class TestAddTuple:
 # ---------------------------------------------------------------------------
 # add_alpha
 # ---------------------------------------------------------------------------
+
 
 class TestAddAlpha:
     def test_appends_alpha_channel(self) -> None:
@@ -68,6 +70,7 @@ class TestAddAlpha:
 # ---------------------------------------------------------------------------
 # image_scale
 # ---------------------------------------------------------------------------
+
 
 class TestImageScale:
     def test_scale_by_factor_returns_none_rescale(self) -> None:
@@ -96,6 +99,7 @@ class TestImageScale:
 # pil_to_np
 # ---------------------------------------------------------------------------
 
+
 class TestPilToNp:
     def test_output_shape_is_width_height_channels(self) -> None:
         # pil_to_np reshapes using img.size which is (W, H) in PIL convention
@@ -112,21 +116,22 @@ class TestPilToNp:
 # blend
 # ---------------------------------------------------------------------------
 
+
 class TestBlend:
     def test_opaque_foreground_covers_background(self) -> None:
         ic = np.zeros((16, 16, 4), dtype=np.uint8)
-        ic[:, :, 0] = 200   # red channel
-        ic[:, :, 3] = 255   # fully opaque
+        ic[:, :, 0] = 200  # red channel
+        ic[:, :, 3] = 255  # fully opaque
         bg = np.zeros((16, 16, 4), dtype=np.uint8)
-        bg[:, :, 2] = 200   # blue channel
-        bg[:, :, 3] = 255   # fully opaque
+        bg[:, :, 2] = 200  # blue channel
+        bg[:, :, 3] = 255  # fully opaque
         result = blend(ic, bg)
         assert result[8, 8, 0] == 200  # IC red dominates
-        assert result[8, 8, 2] == 0    # background blue gone
+        assert result[8, 8, 2] == 0  # background blue gone
 
     def test_transparent_foreground_shows_background(self) -> None:
         ic = np.zeros((16, 16, 4), dtype=np.uint8)
-        ic[:, :, 3] = 0   # fully transparent
+        ic[:, :, 3] = 0  # fully transparent
         bg = np.zeros((16, 16, 4), dtype=np.uint8)
         bg[:, :, 0] = 200
         bg[:, :, 3] = 255
@@ -144,6 +149,7 @@ class TestBlend:
 # org_corners
 # ---------------------------------------------------------------------------
 
+
 class TestOrgCorners:
     def test_returns_both_original_and_rotated(self) -> None:
         original, rotated = org_corners(10, 10, np.array([128.0, 128.0]), 0.0)
@@ -152,9 +158,9 @@ class TestOrgCorners:
 
     def test_original_order_is_tl_tr_bl_br(self) -> None:
         original, _ = org_corners(10, 10, np.array([128.0, 128.0]), 0.0)
-        assert original[0] == (0, 0)    # TL
-        assert original[1] == (10, 0)   # TR
-        assert original[2] == (0, 10)   # BL
+        assert original[0] == (0, 0)  # TL
+        assert original[1] == (10, 0)  # TR
+        assert original[2] == (0, 10)  # BL
         assert original[3] == (10, 10)  # BR
 
     def test_zero_angle_translates_to_center(self) -> None:
@@ -173,6 +179,7 @@ class TestOrgCorners:
 # ---------------------------------------------------------------------------
 # get_layer
 # ---------------------------------------------------------------------------
+
 
 class TestGetLayer:
     def test_shape_parameter_resizes_to_target(self, fake_pcb_assets: tuple[str, str]) -> None:
@@ -203,6 +210,7 @@ class TestGetLayer:
 # img_generator
 # ---------------------------------------------------------------------------
 
+
 def _make_rgba(h: int, w: int) -> np.ndarray:
     arr = np.zeros((h, w, 4), dtype=np.uint8)
     arr[:, :, 3] = 255
@@ -212,10 +220,13 @@ def _make_rgba(h: int, w: int) -> np.ndarray:
 class TestImgGenerator:
     def test_output_shapes_and_types(self) -> None:
         img, ic_center, corners, angle = img_generator(
-            alpha=5.0, delta_weight=0.1,
-            back_height=256, back_width=256,
+            alpha=5.0,
+            delta_weight=0.1,
+            back_height=256,
+            back_width=256,
             backlayer=_make_rgba(256, 256),
-            ic_height=64, ic_width=64,
+            ic_height=64,
+            ic_width=64,
             front_layer_base=_make_rgba(64, 64),
         )
         assert img.shape == (256, 256, 3)
@@ -225,9 +236,14 @@ class TestImgGenerator:
 
     def test_angle_within_alpha_bounds(self) -> None:
         kwargs = dict(
-            alpha=10.0, delta_weight=0.1,
-            back_height=256, back_width=256, backlayer=_make_rgba(256, 256),
-            ic_height=64, ic_width=64, front_layer_base=_make_rgba(64, 64),
+            alpha=10.0,
+            delta_weight=0.1,
+            back_height=256,
+            back_width=256,
+            backlayer=_make_rgba(256, 256),
+            ic_height=64,
+            ic_width=64,
+            front_layer_base=_make_rgba(64, 64),
         )
         for _ in range(10):
             _, _, _, angle = img_generator(**kwargs)
@@ -235,9 +251,14 @@ class TestImgGenerator:
 
     def test_seed_reproducibility(self) -> None:
         kwargs = dict(
-            alpha=5.0, delta_weight=0.1,
-            back_height=256, back_width=256, backlayer=_make_rgba(256, 256),
-            ic_height=64, ic_width=64, front_layer_base=_make_rgba(64, 64),
+            alpha=5.0,
+            delta_weight=0.1,
+            back_height=256,
+            back_width=256,
+            backlayer=_make_rgba(256, 256),
+            ic_height=64,
+            ic_width=64,
+            front_layer_base=_make_rgba(64, 64),
         )
         np.random.seed(7)
         rnd.seed(7)
@@ -256,15 +277,21 @@ class TestImgGenerator:
 # generate_dataset
 # ---------------------------------------------------------------------------
 
+
 class TestGenerateDataset:
     def test_creates_images_and_csv(self, tmp_path: Path, fake_pcb_assets: tuple[str, str]) -> None:
         backlayer_path, ic_path = fake_pcb_assets
 
         generate_dataset(
-            dataset_size=3, rotation_angle=5.0, delta=0.1,
-            data_dir=str(tmp_path / "images"), labels_dir=str(tmp_path / "labels"),
-            label_file="test.csv", backlayer_path=backlayer_path,
-            ic_path=ic_path, seed=42,
+            dataset_size=3,
+            rotation_angle=5.0,
+            delta=0.1,
+            data_dir=str(tmp_path / "images"),
+            labels_dir=str(tmp_path / "labels"),
+            label_file="test.csv",
+            backlayer_path=backlayer_path,
+            ic_path=ic_path,
+            seed=42,
         )
 
         assert len(list((tmp_path / "images").glob("pcb_*.png"))) == 3
@@ -275,21 +302,52 @@ class TestGenerateDataset:
     def test_seed_reproducibility(self, tmp_path: Path, fake_pcb_assets: tuple[str, str]) -> None:
         backlayer_path, ic_path = fake_pcb_assets
         common = dict(
-            dataset_size=2, rotation_angle=10.0, delta=0.1,
-            backlayer_path=backlayer_path, ic_path=ic_path, seed=99,
+            dataset_size=2,
+            rotation_angle=10.0,
+            delta=0.1,
+            backlayer_path=backlayer_path,
+            ic_path=ic_path,
+            seed=99,
         )
-        generate_dataset(**common, data_dir=str(tmp_path / "a/img"), labels_dir=str(tmp_path / "a/lbl"), label_file="out.csv")
-        generate_dataset(**common, data_dir=str(tmp_path / "b/img"), labels_dir=str(tmp_path / "b/lbl"), label_file="out.csv")
+        generate_dataset(
+            **common,
+            data_dir=str(tmp_path / "a/img"),
+            labels_dir=str(tmp_path / "a/lbl"),
+            label_file="out.csv",
+        )
+        generate_dataset(
+            **common,
+            data_dir=str(tmp_path / "b/img"),
+            labels_dir=str(tmp_path / "b/lbl"),
+            label_file="out.csv",
+        )
 
         assert (tmp_path / "a/lbl/out.csv").read_text() == (tmp_path / "b/lbl/out.csv").read_text()
 
-    def test_different_seeds_produce_different_output(self, tmp_path: Path, fake_pcb_assets: tuple[str, str]) -> None:
+    def test_different_seeds_produce_different_output(
+        self, tmp_path: Path, fake_pcb_assets: tuple[str, str]
+    ) -> None:
         backlayer_path, ic_path = fake_pcb_assets
         base = dict(
-            dataset_size=5, rotation_angle=10.0, delta=0.1,
-            backlayer_path=backlayer_path, ic_path=ic_path,
+            dataset_size=5,
+            rotation_angle=10.0,
+            delta=0.1,
+            backlayer_path=backlayer_path,
+            ic_path=ic_path,
         )
-        generate_dataset(**base, seed=1, data_dir=str(tmp_path / "a/img"), labels_dir=str(tmp_path / "a/lbl"), label_file="out.csv")
-        generate_dataset(**base, seed=2, data_dir=str(tmp_path / "b/img"), labels_dir=str(tmp_path / "b/lbl"), label_file="out.csv")
+        generate_dataset(
+            **base,
+            seed=1,
+            data_dir=str(tmp_path / "a/img"),
+            labels_dir=str(tmp_path / "a/lbl"),
+            label_file="out.csv",
+        )
+        generate_dataset(
+            **base,
+            seed=2,
+            data_dir=str(tmp_path / "b/img"),
+            labels_dir=str(tmp_path / "b/lbl"),
+            label_file="out.csv",
+        )
 
         assert (tmp_path / "a/lbl/out.csv").read_text() != (tmp_path / "b/lbl/out.csv").read_text()

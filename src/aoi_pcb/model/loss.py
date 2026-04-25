@@ -19,10 +19,7 @@ import tensorflow as tf
 # Each column encodes one edge as the signed sum of two corner positions.
 # Shape: (4, 4) — applied as C @ _EDGE_SELECTOR where C is (batch, 2, 4).
 _EDGE_SELECTOR = tf.constant(
-    [[-1.0,  0.0,  0.0, -1.0],
-     [ 0.0,  0.0,  1.0,  1.0],
-     [ 1.0,  1.0,  0.0,  0.0],
-     [ 0.0, -1.0, -1.0,  0.0]],
+    [[-1.0, 0.0, 0.0, -1.0], [0.0, 0.0, 1.0, 1.0], [1.0, 1.0, 0.0, 0.0], [0.0, -1.0, -1.0, 0.0]],
     dtype=tf.float64,
 )
 
@@ -30,10 +27,7 @@ _EDGE_SELECTOR = tf.constant(
 # for computing pairwise products in the perpendicularity denominator.
 # Shape: (4, 4) — cyclic permutation of the identity.
 _NORMS_SELECTOR = tf.constant(
-    [[0., 0., 0., 1.],
-     [1., 0., 0., 0.],
-     [0., 1., 0., 0.],
-     [0., 0., 1., 0.]],
+    [[0.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0]],
     dtype=tf.float64,
 )
 
@@ -53,12 +47,12 @@ def custom_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: n
     # Reshape to (batch, 4, 2) then transpose to (batch, 2, 4) so each
     # column holds the x and y coordinates of one corner
     C_p = tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64)
-    C_p = tf.einsum('bij->bji', C_p)
+    C_p = tf.einsum("bij->bji", C_p)
 
     # Compute the four edge vectors: E = C @ _EDGE_SELECTOR
     # Each column of E is a 2D vector representing one side of the rectangle
     E_p = tf.linalg.matmul(C_p, _EDGE_SELECTOR)
-    E_p_T = tf.einsum('bij->bji', E_p)
+    E_p_T = tf.einsum("bij->bji", E_p)
 
     # E^T @ E is symmetric; its diagonal holds squared edge norms and its
     # off-diagonal entries hold pairwise dot products between edges
@@ -70,7 +64,7 @@ def custom_loss(y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: n
 
     # Compute reciprocal of each adjacent norm product (the cos denominator)
     norms_denominator = tf.math.reciprocal(norms * tf.linalg.matmul(norms, _NORMS_SELECTOR))
-    norms_denominator_T = tf.einsum('bij->bji', norms_denominator)
+    norms_denominator_T = tf.einsum("bij->bji", norms_denominator)
 
     # Collect the four adjacent edge dot products (cos numerators):
     # edges 0-1, 1-2, 2-3 are on the first subdiagonal; edge 3-0 is E[-1, 0]

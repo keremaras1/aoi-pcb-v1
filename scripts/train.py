@@ -16,18 +16,17 @@ from datetime import datetime
 from pathlib import Path
 
 import tensorflow as tf
+from keras import callbacks
+
 from aoi_pcb.config_loader import Config
 from aoi_pcb.data.encoder import DataEncoder
 from aoi_pcb.model.architecture import build_model
 from aoi_pcb.model.loss import custom_loss
 from aoi_pcb.model.metric import KeypointAlignmentMetric
-from keras import callbacks
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Train the IC keypoint detection model."
-    )
+    parser = argparse.ArgumentParser(description="Train the IC keypoint detection model.")
     parser.add_argument(
         "--config",
         default="config.json",
@@ -49,8 +48,10 @@ def main() -> None:
     config = Config(args.config)
 
     # Resolve output directory
-    output_dir = Path(args.output_dir) if args.output_dir else (
-        Path("experiments") / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    output_dir = (
+        Path(args.output_dir)
+        if args.output_dir
+        else (Path("experiments") / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(args.config, output_dir / "config.json")
@@ -65,7 +66,9 @@ def main() -> None:
     # --- Data loading ---
     encoder = DataEncoder(config)
     data_dir = config.generator.train_data.data_dir
-    label_path = Path(config.generator.train_data.labels_dir) / config.generator.train_data.label_file
+    label_path = (
+        Path(config.generator.train_data.labels_dir) / config.generator.train_data.label_file
+    )
 
     X, y, ref_coords, ref_center = encoder(data_dir, label_path)
     print(f"Training data shape: {X.shape}, Labels shape: {y.shape}")

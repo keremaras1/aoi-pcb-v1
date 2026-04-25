@@ -5,19 +5,20 @@ import pytest
 import tensorflow as tf
 
 from aoi_pcb.model.loss import _EDGE_SELECTOR, _NORMS_SELECTOR, custom_loss
-from aoi_pcb.model.metric import KeypointAlignmentMetric, _EDGE_SELECTOR as METRIC_EDGE_SELECTOR
-
+from aoi_pcb.model.metric import _EDGE_SELECTOR as METRIC_EDGE_SELECTOR
+from aoi_pcb.model.metric import KeypointAlignmentMetric
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _perfect_rectangle(batch_size: int = 2) -> tf.Tensor:
     """Return a batch of keypoints forming a centered axis-aligned rectangle.
 
     Order matches org_corners: [TL, TR, BL, BR].
     """
-    corners = [0.2, 0.2,  0.8, 0.2,  0.2, 0.8,  0.8, 0.8]
+    corners = [0.2, 0.2, 0.8, 0.2, 0.2, 0.8, 0.8, 0.8]
     return tf.constant([corners] * batch_size, dtype=tf.float32)
 
 
@@ -40,6 +41,7 @@ def _make_metric(ref_coords=None, ref_center=None) -> KeypointAlignmentMetric:
 # ---------------------------------------------------------------------------
 # Custom loss
 # ---------------------------------------------------------------------------
+
 
 class TestCustomLossOutput:
     def test_returns_scalar(self) -> None:
@@ -82,7 +84,6 @@ class TestCustomLossPerpComponent:
         assert loss < 1e-6
 
 
-
 class TestModuleLevelConstants:
     def test_edge_selector_shape(self) -> None:
         assert _EDGE_SELECTOR.shape == (4, 4)
@@ -97,6 +98,7 @@ class TestModuleLevelConstants:
 # ---------------------------------------------------------------------------
 # KeypointAlignmentMetric
 # ---------------------------------------------------------------------------
+
 
 class TestKeypointAlignmentMetricOutput:
     def test_output_is_scalar_like(self) -> None:
@@ -124,7 +126,7 @@ class TestKeypointAlignmentMetricPerfectPrediction:
             class metrics:
                 x_weight = 1.0
                 y_weight = 1.0
-                angle_weight = 0.0   # isolate center error
+                angle_weight = 0.0  # isolate center error
 
         metric = KeypointAlignmentMetric(ref_center, ref_coords, _UnitWeights())
 

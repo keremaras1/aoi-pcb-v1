@@ -17,7 +17,7 @@ import tensorflow as tf
 # used as the reference direction for angle calculation.
 # Shape: (4, 1)
 _EDGE_SELECTOR = tf.constant(
-    [[1.], [0.], [-1.], [0.]],
+    [[1.0], [0.0], [-1.0], [0.0]],
     dtype=tf.float64,
 )
 
@@ -61,7 +61,9 @@ class KeypointAlignmentMetric:
         return self.alignment_metric(y_true, y_pred)
 
     @tf.function
-    def alignment_metric(self, y_true: tf.Tensor, y_pred: tf.Tensor) -> tf.Tensor:  # pragma: no cover
+    def alignment_metric(
+        self, y_true: tf.Tensor, y_pred: tf.Tensor
+    ) -> tf.Tensor:  # pragma: no cover
         """Compute the weighted alignment metric for a batch of predictions.
 
         Args:
@@ -72,18 +74,24 @@ class KeypointAlignmentMetric:
             Scalar metric tensor (float64). Lower is better.
         """
         # Reshape to (batch, 4, 2) then transpose to (batch, 2, 4)
-        C_p = tf.einsum('bij->bji', tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64))
-        C_t = tf.einsum('bij->bji', tf.cast(tf.reshape(y_true, [-1, 4, 2]), dtype=tf.float64))
+        C_p = tf.einsum("bij->bji", tf.cast(tf.reshape(y_pred, [-1, 4, 2]), dtype=tf.float64))
+        C_t = tf.einsum("bij->bji", tf.cast(tf.reshape(y_true, [-1, 4, 2]), dtype=tf.float64))
 
         # Compute predicted and true IC centers as the mean of the four corners
-        center_t = tf.concat([
-            tf.reshape(tf.math.reduce_mean(C_t[:, 0, :], axis=1), [-1, 1]),
-            tf.reshape(tf.math.reduce_mean(C_t[:, 1, :], axis=1), [-1, 1]),
-        ], axis=1)
-        center_p = tf.concat([
-            tf.reshape(tf.math.reduce_mean(C_p[:, 0, :], axis=1), [-1, 1]),
-            tf.reshape(tf.math.reduce_mean(C_p[:, 1, :], axis=1), [-1, 1]),
-        ], axis=1)
+        center_t = tf.concat(
+            [
+                tf.reshape(tf.math.reduce_mean(C_t[:, 0, :], axis=1), [-1, 1]),
+                tf.reshape(tf.math.reduce_mean(C_t[:, 1, :], axis=1), [-1, 1]),
+            ],
+            axis=1,
+        )
+        center_p = tf.concat(
+            [
+                tf.reshape(tf.math.reduce_mean(C_p[:, 0, :], axis=1), [-1, 1]),
+                tf.reshape(tf.math.reduce_mean(C_p[:, 1, :], axis=1), [-1, 1]),
+            ],
+            axis=1,
+        )
 
         # Centre offsets relative to the reference position
         offset_t = self.R_center - center_t

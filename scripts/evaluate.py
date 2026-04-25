@@ -9,7 +9,8 @@ Usage::
     python scripts/evaluate.py
     python scripts/evaluate.py --save-visuals
     python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras
-    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras --config path/to/other_config.json
+    python scripts/evaluate.py --model-path experiments/run_YYYYMMDD_HHMMSS/model.keras \
+        --config path/to/other_config.json
 """
 
 import argparse
@@ -26,9 +27,7 @@ from aoi_pcb.model.metric import KeypointAlignmentMetric
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Evaluate a trained IC keypoint detection model."
-    )
+    parser = argparse.ArgumentParser(description="Evaluate a trained IC keypoint detection model.")
     parser.add_argument(
         "--model-path",
         default=None,
@@ -87,9 +86,9 @@ def draw_keypoints(
 
     img = image.copy()
     for corner in corners_actual:
-        img = cv2.circle(img, tuple(corner), 4, (255, 0, 0), 2)   # red — ground truth
+        img = cv2.circle(img, tuple(corner), 4, (255, 0, 0), 2)  # red — ground truth
     for corner in corners_predicted:
-        img = cv2.circle(img, tuple(corner), 4, (0, 0, 255), 2)   # blue — prediction
+        img = cv2.circle(img, tuple(corner), 4, (0, 0, 255), 2)  # blue — prediction
 
     return img
 
@@ -101,7 +100,9 @@ def main() -> None:
     if args.model_path:
         model_path = args.model_path
     else:
-        runs = sorted(Path("experiments").glob("*/model.keras"), key=lambda p: p.stat().st_mtime, reverse=True)
+        runs = sorted(
+            Path("experiments").glob("*/model.keras"), key=lambda p: p.stat().st_mtime, reverse=True
+        )
         if not runs:
             raise FileNotFoundError("No trained model found in experiments/. Run train.py first.")
         model_path = str(runs[0])
@@ -114,9 +115,7 @@ def main() -> None:
     # --- Load data ---
     encoder = DataEncoder(config)
     data_dir = config.generator.val_data.data_dir
-    label_path = (
-        Path(config.generator.val_data.labels_dir) / config.generator.val_data.label_file
-    )
+    label_path = Path(config.generator.val_data.labels_dir) / config.generator.val_data.label_file
 
     X, y, ref_coords, ref_center = encoder(data_dir, label_path)
     print(f"Validation data shape: {X.shape}, Labels shape: {y.shape}")

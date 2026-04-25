@@ -46,7 +46,7 @@ def alphanum_key(file_name: str) -> tuple:
     Returns:
         Tuple of alternating string and int segments.
     """
-    return tuple(int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', file_name))
+    return tuple(int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", file_name))
 
 
 def sort_alphanumeric(file_dir: str) -> list[str]:

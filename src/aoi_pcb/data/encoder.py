@@ -4,9 +4,10 @@ import csv
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
-from aoi_pcb.data.utils import sort_alphanumeric, normalize_values
 from numpy.typing import NDArray
+from PIL import Image
+
+from aoi_pcb.data.utils import normalize_values, sort_alphanumeric
 
 
 class DataEncoder:
@@ -58,13 +59,13 @@ class DataEncoder:
         sorted_images = sort_alphanumeric(images_dir)
 
         dataset = self.image_to_numpy(Path(images_dir), sorted_images)
-        labels, ref_coords, ref_center = self.coords_to_numpy(
-            labels_dir, dataset.shape[1]
-        )
+        labels, ref_coords, ref_center = self.coords_to_numpy(labels_dir, dataset.shape[1])
 
         if self.normalize_data:
             if not (dataset.max() <= 1.0 and dataset.min() >= 0.0):
-                raise ValueError("Image data is not normalized to [0, 1] after encoding.")  # pragma: no cover
+                raise ValueError(
+                    "Image data is not normalized to [0, 1] after encoding."
+                )  # pragma: no cover
 
         if self.normalize_labels:
             if not (labels.max() <= 1.0 and labels.min() >= 0.0):
@@ -111,7 +112,7 @@ class DataEncoder:
         if self.size is not None:
             if not isinstance(self.size, int):
                 raise ValueError(f"train_data_splice must be an integer, got {type(self.size)}.")
-            dataset = dataset[:self.size]
+            dataset = dataset[: self.size]
             print("Data split to new size ", self.size)
             print("Shape: ", dataset.shape, " Type: ", type(dataset), " dtype: ", dataset.dtype)
             return dataset
@@ -145,22 +146,27 @@ class DataEncoder:
         """
         coords = []
 
-        with open(csv_name, 'r') as file:
+        with open(csv_name, "r") as file:
             csv_reader = csv.reader(file)
             csv_reader_list = list(csv_reader)
 
             ref_row = csv_reader_list[0]
 
             ref_points = list(
-                int(x) for x in
-                ref_row[0].replace("[", "").replace("]", "").replace("(", "").replace(")", "").split(',')
+                int(x)
+                for x in ref_row[0]
+                .replace("[", "")
+                .replace("]", "")
+                .replace("(", "")
+                .replace(")", "")
+                .split(",")
             )
-            ref_center = list(int(x) for x in ref_row[1].strip('()').split(','))
+            ref_center = list(int(x) for x in ref_row[1].strip("()").split(","))
 
             for row in csv_reader_list[1:]:
                 c_xy = []
                 for tup in row:
-                    c_xy.extend(int(x) for x in tup.strip('()').split(','))
+                    c_xy.extend(int(x) for x in tup.strip("()").split(","))
                 coords.append(c_xy)
 
         coords = np.asarray(coords)
@@ -171,7 +177,9 @@ class DataEncoder:
 
         if self.normalize_labels and img_width is not None:
             if not isinstance(img_width, int):
-                raise ValueError(f"img_width must be an integer, got {type(img_width)}.")  # pragma: no cover
+                raise ValueError(
+                    f"img_width must be an integer, got {type(img_width)}."
+                )  # pragma: no cover
             coords = coords / img_width
             ref_points = ref_points / img_width
             ref_center = ref_center / img_width
@@ -179,8 +187,10 @@ class DataEncoder:
 
         if self.size is not None:
             if not isinstance(self.size, int):
-                raise ValueError(f"train_data_splice must be an integer, got {type(self.size)}.")  # pragma: no cover
-            coords = coords[:self.size]
+                raise ValueError(
+                    f"train_data_splice must be an integer, got {type(self.size)}."
+                )  # pragma: no cover
+            coords = coords[: self.size]
             print("Labels split to new size: ", self.size)
             print("Shape: ", coords.shape, " Type: ", type(coords), " dtype: ", coords.dtype)
             return coords, ref_points, ref_center
