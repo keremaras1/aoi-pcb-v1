@@ -10,50 +10,77 @@ A deep learning system for detecting IC component misplacement on printed circui
 
 ## Overview
 
-IC misplacement is one of the most common defects in PCB assembly: a component lands at the wrong position or rotation, causing electrical failures that are costly to catch downstream. Traditional AOI systems rely on large hand-labeled image datasets that are expensive to collect and tightly coupled to specific board designs.
+Automated Optical Inspection is one of the most common and effective quality checks in PCB assembly manufacturing, but deploying deep learning solutions in this space is typically bottlenecked by two practical constraints: the sheer number and variety of PCB components, each with intricate and design-specific geometry, makes assembling large labelled training datasets for specific board configurations costly and time-consuming, while the computing resources available in typical industrial settings are often severely limited.
 
-This project reframes the problem as a **keypoint regression task**: given a PCB image, predict the (x, y) coordinates of all four corners of the IC bounding box. Three design choices make this practical without real labeled data:
+This project is a proof of concept demonstrating that both constraints can be addressed together. By combining **synthetic data generation** with **transfer learning from a pretrained backbone**, a reliable starting point for IC keypoint detection can be reached without collecting a single hand-labelled real image — and the resulting model is compact enough to run on low-cost edge hardware.
 
-- **Synthetic training data** — A reference IC is blended onto real PCB background images with randomised rotation and offset, generating 2,000 training and 2,000 validation images programmatically. No hand-labelling required.
-- **Custom perpendicularity loss** — In addition to coordinate MSE, a penalty term enforces that the four predicted corner vectors form right angles, encouraging geometrically valid (rectangular) outputs.
-- **Frozen MobileNetV2 backbone** — Pre-trained ImageNet features are used as-is. Only the small custom regression head is trained, keeping the parameter count low and training fast.
+The problem is framed as a **keypoint regression task**: given a PCB image, predict the (x, y) coordinates of all four corners of the IC bounding box. Three design choices make this viable:
+
+- **Synthetic training data** — A reference IC is blended onto real PCB background images with randomised rotation and positional offset, generating a representative dataset programmatically. No hand-labelling required.
+- **Frozen MobileNetV2 backbone** — Pre-trained ImageNet features are reused as-is via transfer learning. Only the lightweight regression head is trained, keeping compute requirements low and making the model suitable for deployment on constrained hardware.
+- **Custom perpendicularity loss** — In addition to coordinate MSE, a penalty term enforces that the four predicted corners form right angles, encouraging geometrically valid outputs rather than just minimising per-point error.
 
 ## Pipeline
 
 ```mermaid
-flowchart LR
-  A["ic.png +<br/>pcb_backlayer.png"] --> B["Generator<br/>rotate + blend"]
-  B --> C["Synthetic<br/>Dataset"]
-  C --> D["DataEncoder"]
-  D --> E["MobileNetV2<br/>frozen"]
-  E --> F["Custom Head<br/>SepConv + Dense"]
-  F --> G["8 keypoints"]
-  G --> H["Custom Loss<br/>MSE + Perp"]
-  H --> I["Trained<br/>model.keras"]
-  I --> J["Evaluator<br/>overlay + metrics"]
-```
+flowchart TB
+  subgraph src["Source Assets"]
+    direction LR
+    IC["ic.png"]
+    BG["pcb_backlayer.png"]
+  end
 
-| Stage | Source |
-|-------|--------|
-| Generator | `src/aoi_pcb/data/generator.py` |
-| DataEncoder | `src/aoi_pcb/data/encoder.py` |
-| MobileNetV2 + Custom Head | `src/aoi_pcb/model/architecture.py` |
-| Custom Loss / Metric | `src/aoi_pcb/model/loss.py`, `metric.py` |
-| Evaluator | `scripts/evaluate.py`, `notebooks/evaluation.ipynb` |
+  subgraph datagen["① Data Generation · generator.py"]
+    direction TB
+    GEN["rotate · offset · blend IC onto background"]
+    DS["N × PNG image + CSV keypoints"]
+    GEN --> DS
+  end
 
-## Model Architecture
+  subgraph enc["② Encoding · encoder.py"]
+    direction TB
+    ENC["load images · normalize labels"]
+    X["X : (N, 256, 256, 3) RGB Images"]
+    Y["y : (N, 8) keypoint coordinates"]
+    ENC --> X & Y
+  end
 
-```
-Input (256×256×3, uint8)
-  → GaussianNoise(σ=0.1)
-  → preprocess_input        [0, 255] → [−1, 1]
-  → MobileNetV2 [frozen, ImageNet weights]
-  → Dropout(0.3)
-  → SeparableConv2D(8 filters, 5×5, ReLU)
-  → Flatten
-  → Dense(512, ReLU)
-  → Dropout(0.1)
-  → Dense(8)                ← 4 corners × (x, y), normalised to [0, 1]
+  subgraph arch["③ Model · architecture.py"]
+    direction TB
+    A1["Input (256 × 256 × 3, uint8)"]
+    A2["GaussianNoise (σ = 0.1)"]
+    A3["preprocess_input: [0, 255] → [-1, 1]"]
+    A4["MobileNetV2 (frozen, ImageNet weights)"]
+    A5["Dropout (0.3)"]
+    A6["SeparableConv2D (8 filters, 5×5, ReLU)"]
+    A7["Flatten"]
+    A8["Dense (512, ReLU)"]
+    A9["Dropout (0.1)"]
+    A10["Dense (8)"]
+    OUT["Output: 8 keypoints (4 corners × x, y)"]
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10 --> OUT
+  end
+
+  subgraph train["④ Training · loss.py · metric.py"]
+    direction TB
+    LOSS["Custom Loss: MSE + perpendicularity penalty"]
+    METRIC["Alignment Metric: center offset + angle error"]
+    MDL["Trained model weights (model.keras)"]
+    LOSS & METRIC --> MDL
+  end
+
+  subgraph eval["⑤ Evaluation · evaluate.py"]
+    direction TB
+    VIS["keypoint prediction overlays"]
+    RPT["loss + metric report"]
+  end
+
+  IC & BG --> GEN
+  DS --> ENC
+  X --> A1
+  Y --> LOSS
+  OUT --> LOSS & METRIC
+  MDL --> VIS & RPT
 ```
 
 ## Results
