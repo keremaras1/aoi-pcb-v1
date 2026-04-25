@@ -130,12 +130,12 @@ Interactive walkthroughs are in `notebooks/`:
 
 All parameters live in `config.json`:
 
-| Section | Key parameters |
-|---------|----------------|
+| Section     | Key parameters                                                                     |
+|-------------|------------------------------------------------------------------------------------|
 | `generator` | `dataset_size`, `rotation_angle`, `delta`, `seed`, output dirs, source image paths |
-| `encoder` | `normalize_data`, `normalize_labels`, `train_data_splice` |
-| `training` | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*` |
-| `metrics` | `x_weight`, `y_weight`, `angle_weight` |
+| `encoder`   | `normalize_data`, `normalize_labels`, `train_data_splice`                          |
+| `training`  | `optimizer_lr`, `n_epochs`, `early_stopping.*`, `lr_schedule.*`                    |
+| `metrics`   | `x_weight`, `y_weight`, `angle_weight`                                             |
 
 ## Testing
 
