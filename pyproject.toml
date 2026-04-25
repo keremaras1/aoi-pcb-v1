@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/keremaras/aoi-pcb-v1"
+Repository = "https://github.com/keremaras1/aoi-pcb-v1"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aoi_pcb"]

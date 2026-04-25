@@ -2,7 +2,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
-[![CI](https://github.com/keremaras/aoi-pcb-v1/actions/workflows/ci.yml/badge.svg)](https://github.com/keremaras/aoi-pcb-v1/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/keremaras1/aoi-pcb-v1/ci.yml?branch=main&label=CI)](https://github.com/keremaras1/aoi-pcb-v1/actions/workflows/ci.yml)
 
 A deep learning system for detecting IC component misplacement on printed circuit boards, implementing the approach described in:
 
@@ -96,7 +96,7 @@ Training stabilises around epoch 600. On the validation set:
 Requires Python ≥ 3.10 and TensorFlow 2.18.
 
 ```bash
-git clone https://github.com/keremaras/aoi-pcb-v1.git
+git clone https://github.com/keremaras1/aoi-pcb-v1.git
 cd aoi-pcb-v1
 
 # CPU only
